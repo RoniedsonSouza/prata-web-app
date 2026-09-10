@@ -1,0 +1,229 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+
+jobs:
+
+  # ===========================================================================
+  #  O repositorio comeca so com documentacao. Cada job abaixo se auto-desliga
+  #  ate o codigo correspondente existir, para o CI nunca ficar vermelho por
+  #  ausencia. Ver docs/etapas/E1-FUNDACAO.md.
+  # ===========================================================================
+  detect:
+    name: O que existe no repo
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.check.outputs.backend }}
+      frontend: ${{ steps.check.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: check
+        run: |
+          if ls ./*.slnx ./*.sln >/dev/null 2>&1; then
+            echo "backend=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "backend=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Sem solution .NET ainda - jobs de backend pulados."
+          fi
+          if [ -f web/package.json ]; then
+            echo "frontend=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "frontend=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Sem web/package.json ainda - jobs de front pulados."
+          fi
+
+  # ===========================================================================
+  #  Documentacao - sempre roda
+  # ===========================================================================
+  docs:
+    name: Documentacao
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Consistencia da documentacao
+        # Script testavel na maquina:  ./scripts/check-docs.sh
+        #  - link interno quebrado em docs/
+        #  - RN-XXX-000 citada sem estar definida no catalogo
+        #  - ADR referenciada que nao existe
+        #  - segredo preenchido no .env.example
+        run: ./scripts/check-docs.sh
+
+  # ===========================================================================
+  #  Backend .NET
+  # ===========================================================================
+  backend:
+    name: Backend (.NET 10)
+    needs: detect
+    if: needs.detect.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.NUGET_PACKAGES }}
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - run: dotnet tool restore
+      - run: dotnet restore
+
+      - name: Formatacao (CSharpier)
+        # Em CSharpier 1.0 a verificacao virou subcomando 'check'.
+        run: dotnet csharpier check .
+
+      - name: Build
+        # TreatWarningsAsErrors ja esta no Directory.Build.props
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Testes de dominio e aplicacao
+        run: >
+          dotnet test --no-build --configuration Release
+          --filter "FullyQualifiedName!~IntegrationTests"
+          --logger "trx;LogFileName=unit.trx"
+          --collect:"XPlat Code Coverage"
+          --results-directory ./TestResults
+
+      - name: Testes de integracao (Testcontainers sobe Postgres real)
+        run: >
+          dotnet test --no-build --configuration Release
+          --filter "FullyQualifiedName~IntegrationTests"
+          --logger "trx;LogFileName=integration.trx"
+          --results-directory ./TestResults
+
+      # -----------------------------------------------------------------------
+      #  Gate de isolamento entre tenants.
+      #  docs/13-ROADMAP-E-RISCOS.md: vazamento entre tenants e o unico risco
+      #  como critico. O teste que tenta ler o tenant vizinho e precisa falhar
+      #  nao pode ser removido nem renomeado sem quebrar o build.
+      #  Ver RN-TEN-001, RN-TEN-002 e docs/15-ESTRATEGIA-DE-TESTES.md.
+      # -----------------------------------------------------------------------
+      - name: Gate - teste de isolamento de tenant presente
+        run: |
+          if ! grep -rqE 'TenantIsolation|IsolamentoDeTenant' tests/ --include='*.cs'; then
+            echo "::error::O teste de isolamento entre tenants desapareceu."
+            echo "Ele e obrigatorio. Ver docs/15-ESTRATEGIA-DE-TESTES.md."
+            exit 1
+          fi
+          echo "Gate de isolamento presente."
+
+      - name: Publicar resultado dos testes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ./TestResults
+          retention-days: 14
+
+  # ===========================================================================
+  #  Front-end
+  # ===========================================================================
+  frontend:
+    name: Front (Next.js)
+    needs: detect
+    if: needs.detect.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+      - run: npm run typecheck --if-present
+      - run: npm run lint --if-present
+      - run: npm run build
+
+      # -----------------------------------------------------------------------
+      #  Orcamento de bundle. Ver docs/16-FRONTEND-E-EXPERIENCIA.md.
+      #  Limites: rota publica <= 120 kB gzip sem WebGL; chunk WebGL <= 200 kB.
+      #  A configuracao "size-limit" vive no package.json de web/.
+      # -----------------------------------------------------------------------
+      - name: Orcamento de bundle (size-limit)
+        run: npm run size --if-present
+
+  # ===========================================================================
+  #  Core Web Vitals - gate de performance do portfolio publico
+  # ===========================================================================
+  lighthouse:
+    name: Lighthouse (portfolio publico)
+    needs: [detect, frontend]
+    if: needs.detect.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+        working-directory: web
+
+      - run: npm run build
+        working-directory: web
+
+      # LCP <= 2,0s / INP <= 200ms / CLS <= 0,05 em mobile emulado.
+      # O portfolio e o canal de aquisicao do fotografo: regressao aqui
+      # custa lead, nao so nota. Assercoes em .github/lighthouse/.
+      - name: Lighthouse CI
+        run: npx --yes @lhci/cli@0.15.1 autorun --config=../.github/lighthouse/lighthouserc.json
+        working-directory: web
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-report
+          path: web/.lighthouseci
+          retention-days: 14
+
+  # ===========================================================================
+  #  Portao final: um unico status obrigatorio no branch protection
+  # ===========================================================================
+  ci:
+    name: CI
+    if: always()
+    needs: [docs, backend, frontend, lighthouse]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consolidar
+        run: |
+          # 'skipped' e aceitavel (etapa ainda nao chegou). 'failure' e
+          # 'cancelled' nao sao.
+          for r in "${{ needs.docs.result }}" "${{ needs.backend.result }}" \
+                   "${{ needs.frontend.result }}" "${{ needs.lighthouse.result }}"; do
+            case "$r" in
+              success|skipped) ;;
+              *) echo "::error::job com resultado '$r'"; exit 1 ;;
+            esac
+          done
+          echo "CI verde."

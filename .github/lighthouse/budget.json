@@ -1,0 +1,26 @@
+[
+  {
+    "//": "Rota publica do portfolio. Numeros em kB. O chunk WebGL NAO entra aqui: ele carrega depois do LCP, por import dinamico, e tem orcamento proprio verificado por size-limit. Ver ADR-0010.",
+    "path": "/*",
+    "resourceSizes": [
+      { "resourceType": "script",   "budget": 160 },
+      { "resourceType": "stylesheet", "budget": 40 },
+      { "resourceType": "font",     "budget": 120 },
+      { "resourceType": "image",    "budget": 900 },
+      { "resourceType": "document", "budget": 40 },
+      { "resourceType": "total",    "budget": 1300 }
+    ],
+    "resourceCounts": [
+      { "resourceType": "script",     "budget": 14 },
+      { "resourceType": "stylesheet", "budget": 4 },
+      { "resourceType": "font",       "budget": 4 },
+      { "resourceType": "third-party","budget": 5 }
+    ],
+    "timings": [
+      { "metric": "largest-contentful-paint", "budget": 2000 },
+      { "metric": "cumulative-layout-shift",  "budget": 0.05 },
+      { "metric": "total-blocking-time",      "budget": 200 },
+      { "metric": "speed-index",              "budget": 3000 }
+    ]
+  }
+]

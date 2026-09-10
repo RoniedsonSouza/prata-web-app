@@ -1,0 +1,124 @@
+<Project>
+
+  <!--
+    Prata - Central Package Management.
+    Versao de pacote se declara AQUI e em nenhum outro lugar. Nos .csproj
+    entra apenas <PackageReference Include="..." /> sem Version.
+
+    Versoes conferidas no NuGet em 2026-09-10. Antes do primeiro commit de
+    codigo, rode:
+        dotnet restore
+        dotnet outdated          (dotnet-outdated-tool, ja no manifest)
+    e atualize este arquivo em um commit separado, so de dependencia.
+
+    ATENCAO A LICENCA - dois pacotes populares deixaram de ser gratuitos e
+    estao deliberadamente FORA daqui:
+      - MediatR         : licenca comercial paga a partir da v13. Prata usa
+                          dispatcher proprio. Ver ADR-0001.
+      - FluentAssertions: licenca comercial paga a partir da v8. Usamos
+                          AwesomeAssertions (fork da v7, Apache-2.0).
+  -->
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <!-- ==================== Persistencia ==================== -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageVersion Include="Npgsql" Version="10.0.3" />
+    <!-- snake_case no banco, PascalCase no C#. Evita "" em toda query Dapper. -->
+    <PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />
+    <!-- Dapper apenas em consulta de listagem do back-office. Ver ADR-0002. -->
+    <PackageVersion Include="Dapper" Version="2.1.79" />
+  </ItemGroup>
+
+  <!-- ==================== Aplicacao ==================== -->
+  <ItemGroup>
+    <PackageVersion Include="FluentValidation" Version="12.1.1" />
+    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.10.0" />
+  </ItemGroup>
+
+  <!-- ==================== API ==================== -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
+    <!-- UI do OpenAPI. Swashbuckle saiu dos templates no .NET 9+. -->
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.17.3" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.12" />
+    <!-- Rate limiting NAO precisa de pacote: esta no shared framework
+         (Microsoft.AspNetCore.RateLimiting) desde o .NET 7. -->
+  </ItemGroup>
+
+  <!-- ==================== Cache / fila leve ==================== -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.12" />
+    <PackageVersion Include="StackExchange.Redis" Version="3.1.31" />
+  </ItemGroup>
+
+  <!-- ==================== Jobs ==================== -->
+  <ItemGroup>
+    <PackageVersion Include="Hangfire.Core" Version="1.8.25" />
+    <PackageVersion Include="Hangfire.AspNetCore" Version="1.8.25" />
+    <PackageVersion Include="Hangfire.PostgreSql" Version="1.21.1" />
+  </ItemGroup>
+
+  <!-- ==================== Imagem, storage, PDF ==================== -->
+  <ItemGroup>
+    <!-- ImageSharp: Six Labors Split License. Gratuito em open source e para
+         empresas com receita anual abaixo do limite da licenca; acima disso
+         exige licenca comercial. CONFIRMAR antes de faturar. Ver ADR-0008. -->
+    <PackageVersion Include="SixLabors.ImageSharp" Version="4.1.1" />
+    <!-- S3 API generica: serve Cloudflare R2, Backblaze B2 e MinIO local. -->
+    <PackageVersion Include="AWSSDK.S3" Version="4.0.103.1" />
+    <!-- Ficha de direcao e contrato em PDF. QuestPDF Community License:
+         gratuito abaixo do limite de receita anual. Ver ADR-0006. -->
+    <PackageVersion Include="QuestPDF" Version="2026.8.0" />
+  </ItemGroup>
+
+  <!-- ==================== Observabilidade ==================== -->
+  <ItemGroup>
+    <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Seq" Version="9.1.0" />
+    <PackageVersion Include="Serilog.Enrichers.Span" Version="3.1.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.18.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.18.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.18.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.18.0" />
+    <!-- Trace de banco vem do proprio Npgsql. O pacote
+         OpenTelemetry.Instrumentation.EntityFrameworkCore so tem prerelease
+         e por isso nao entra. -->
+    <PackageVersion Include="Npgsql.OpenTelemetry" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="10.0.12" />
+    <PackageVersion Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
+  </ItemGroup>
+
+  <!-- ==================== Analisadores ==================== -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.401" />
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.34.0.3385" />
+  </ItemGroup>
+
+  <!-- ==================== Testes ==================== -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.0" />
+    <PackageVersion Include="xunit.v3" Version="4.0.0" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
+    <PackageVersion Include="AwesomeAssertions" Version="9.6.0" />
+    <PackageVersion Include="NSubstitute" Version="6.2.0" />
+    <PackageVersion Include="NSubstitute.Analyzers.CSharp" Version="1.0.17" />
+    <PackageVersion Include="Bogus" Version="35.6.5" />
+    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
+    <!-- Postgres real no teste de integracao. Sem isso nao se testa RLS. -->
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.15.0" />
+    <PackageVersion Include="Testcontainers.Redis" Version="4.15.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />
+    <PackageVersion Include="Respawn" Version="7.0.0" />
+  </ItemGroup>
+
+</Project>

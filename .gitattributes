@@ -1,0 +1,34 @@
+# Normaliza fim de linha: repositorio sempre LF
+* text=auto eol=lf
+
+*.sln       text eol=crlf
+*.csproj    text eol=lf
+*.props     text eol=lf
+*.targets   text eol=lf
+*.cs        text eol=lf diff=csharp
+*.ts        text eol=lf
+*.tsx       text eol=lf
+*.md        text eol=lf
+*.sql       text eol=lf
+*.glsl      text eol=lf
+*.ps1       text eol=crlf
+*.sh        text eol=lf
+
+# Binarios: sem normalizacao, sem diff
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.webp      binary
+*.avif      binary
+*.gif       binary
+*.ico       binary
+*.pdf       binary
+*.woff      binary
+*.woff2     binary
+*.ttf       binary
+*.otf       binary
+
+# Arquivos gerados nao contam no diff nem na estatistica de linguagem
+*.lock              linguist-generated=true -diff
+package-lock.json   linguist-generated=true -diff
+**/Migrations/*.cs  linguist-generated=true

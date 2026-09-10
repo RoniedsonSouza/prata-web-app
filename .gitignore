@@ -1,0 +1,64 @@
+# ---- .NET ----
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]64/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.sample.json
+*.received.*
+TestResults/
+coverage/
+*.coverage
+*.trx
+BenchmarkDotNet.Artifacts/
+msbuild.log
+artifacts/
+
+# ---- Node / Next.js ----
+node_modules/
+.next/
+out/
+build/
+.turbo/
+*.tsbuildinfo
+next-env.d.ts
+.vercel/
+.swc/
+playwright-report/
+test-results/
+.lighthouseci/
+
+# ---- Segredos: NUNCA versionar ----
+.env
+.env.*
+!.env.example
+*.pem
+*.pfx
+*.p12
+*.key
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.local.json
+secrets.json
+
+# ---- Infra local ----
+.docker-data/
+docker-compose.override.yml
+*.dump
+*.sql.gz
+
+# ---- Sistema ----
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+*.swp

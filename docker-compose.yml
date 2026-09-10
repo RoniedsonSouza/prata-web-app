@@ -1,0 +1,213 @@
+# Prata - ambiente de desenvolvimento local
+#
+#   docker compose up -d
+#   docker compose logs -f api-deps
+#
+# Nada de codigo da aplicacao aqui: este arquivo sobe apenas dependencias.
+# A API e o Worker rodam na maquina (dotnet run / dotnet watch) e o front
+# roda no Next (npm run dev). Ver docs/14-AMBIENTES-E-OPERACAO.md.
+#
+# Tags fixadas de proposito. Imagem sem tag em ambiente de dev e a origem
+# classica do "na minha maquina funciona".
+
+name: prata
+
+services:
+
+  # =========================================================================
+  #  PostgreSQL 17
+  # =========================================================================
+  # ATENCAO - a pegadinha numero 1 de RLS:
+  #   superusuario e DONO DA TABELA ignoram Row Level Security.
+  #   O usuario abaixo (prata_owner) e o dono: usar SO para migration.
+  #   A aplicacao precisa conectar como prata_app, criado com NOBYPASSRLS e
+  #   sem posse das tabelas. O DDL desses dois papeis esta em
+  #   docs/11-MODELO-DE-DADOS.md, secao "Papeis do banco".
+  #   Se a API conectar como prata_owner, a RLS existe e nao protege nada.
+  #
+  #   ATENCAO 2 - so em desenvolvimento:
+  #   a imagem do Postgres cria POSTGRES_USER como SUPERUSUARIO, e
+  #   superusuario ignora RLS mesmo com FORCE ROW LEVEL SECURITY. Ou seja,
+  #   aqui o prata_owner bypassa a policy. Em producao (Neon/RDS) o owner
+  #   NAO deve ser superusuario. Por isso o teste de isolamento roda sempre
+  #   com prata_app: rodar com o owner faz o teste passar por engano.
+  postgres:
+    image: postgres:17-alpine
+    container_name: prata-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: prata_owner
+      POSTGRES_PASSWORD: prata_dev_only
+      POSTGRES_DB: prata
+      # pt-BR de verdade: ordenacao e formatacao iguais a producao
+      LANG: pt_BR.UTF-8
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8"
+      TZ: America/Sao_Paulo
+      PGTZ: America/Sao_Paulo
+    command:
+      - postgres
+      # Log de query lenta: acha o N+1 do EF antes do cliente achar
+      - -c
+      - log_min_duration_statement=300
+      - -c
+      - log_connections=on
+      - -c
+      - max_connections=200
+      - -c
+      - shared_buffers=256MB
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U prata_owner -d prata"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  # =========================================================================
+  #  Redis - sessao de galeria, rate limit, idempotencia de webhook
+  # =========================================================================
+  redis:
+    image: redis:8-alpine
+    container_name: prata-redis
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --maxmemory
+      - 256mb
+      # noeviction de proposito: chave de idempotencia de webhook NAO pode
+      # ser descartada silenciosamente sob pressao de memoria. Ver RN-FIN-021.
+      - --maxmemory-policy
+      - noeviction
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  # =========================================================================
+  #  MinIO - S3 local (fica Cloudflare R2 em producao)
+  # =========================================================================
+  # O console web da edicao community foi reduzido a partir de 2025.
+  # Para administrar bucket use o cliente 'mc' (servico minio-init abaixo)
+  # ou a AWS CLI apontando para --endpoint-url http://localhost:9000
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    container_name: prata-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: prata_dev
+      MINIO_ROOT_PASSWORD: prata_dev_secret
+      # Sem isso o presigned URL gerado pelo AWSSDK.S3 nao valida a assinatura
+      MINIO_REGION: us-east-1
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  # Cria os buckets e sai. Nao fica de pe.
+  minio-init:
+    image: minio/mc:latest
+    container_name: prata-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 prata_dev prata_dev_secret &&
+      mc mb --ignore-existing local/prata-originals &&
+      mc mb --ignore-existing local/prata-derivatives &&
+      mc mb --ignore-existing local/prata-exports &&
+      mc anonymous set none local/prata-originals &&
+      mc anonymous set none local/prata-derivatives &&
+      mc anonymous set none local/prata-exports &&
+      echo '--- buckets prontos, todos privados (RN-ENT-002) ---' &&
+      mc ls local
+      "
+    restart: "no"
+
+  # =========================================================================
+  #  Mailpit - SMTP falso + caixa de entrada web
+  # =========================================================================
+  # E-mail transacional nunca sai da maquina em dev. Abra http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:v1.31.1
+    container_name: prata-mailpit
+    restart: unless-stopped
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+
+  # =========================================================================
+  #  Seq - log estruturado (Serilog) + trace OTLP no mesmo lugar
+  # =========================================================================
+  # UI em http://localhost:5341
+  # Serilog -> ingestao nativa;  OpenTelemetry -> OTLP em /ingest/otlp
+  seq:
+    image: datalust/seq:2026.1
+    container_name: prata-seq
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_NOAUTHENTICATION: "true"
+    ports:
+      - "${SEQ_UI_PORT:-5341}:80"
+      - "${SEQ_OTLP_PORT:-5342}:5341"
+    volumes:
+      - seq-data:/data
+
+  # =========================================================================
+  #  Porta de espera: bloqueia ate tudo estar saudavel
+  # =========================================================================
+  # Use em script/CI:  docker compose up --wait api-deps
+  api-deps:
+    image: alpine:3.22
+    container_name: prata-deps-ready
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    command: >
+      /bin/sh -c "
+      echo '';
+      echo '  Prata - dependencias no ar';
+      echo '  ------------------------------------------------';
+      echo '  Postgres   localhost:5432   prata_owner / prata_dev_only';
+      echo '  Redis      localhost:6379';
+      echo '  MinIO S3   localhost:9000   prata_dev / prata_dev_secret';
+      echo '  Mailpit    http://localhost:8025';
+      echo '  Seq        http://localhost:5341';
+      echo '  ------------------------------------------------';
+      echo '  Falta criar o papel prata_app: docs/11-MODELO-DE-DADOS.md';
+      echo '';
+      "
+    restart: "no"
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:
+  seq-data:

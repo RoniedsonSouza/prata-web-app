@@ -1,0 +1,73 @@
+{
+  "//": "Prata - gate de Core Web Vitals do portfolio publico. Ver docs/16-FRONTEND-E-EXPERIENCIA.md",
+  "ci": {
+    "collect": {
+      "startServerCommand": "npm run start",
+      "startServerReadyPattern": "Ready in|ready started server",
+      "startServerReadyTimeout": 60000,
+      "url": [
+        "http://localhost:3000/",
+        "http://localhost:3000/t/estudio-demo",
+        "http://localhost:3000/t/estudio-demo/servicos"
+      ],
+      "numberOfRuns": 3,
+      "settings": {
+        "preset": "desktop",
+        "formFactor": "mobile",
+        "screenEmulation": {
+          "mobile": true,
+          "width": 412,
+          "height": 823,
+          "deviceScaleFactor": 1.75,
+          "disabled": false
+        },
+        "throttling": {
+          "rttMs": 150,
+          "throughputKbps": 1638,
+          "cpuSlowdownMultiplier": 4,
+          "requestLatencyMs": 0,
+          "downloadThroughputKbps": 0,
+          "uploadThroughputKbps": 0
+        },
+        "budgetsPath": "../.github/lighthouse/budget.json"
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance":   ["error", { "minScore": 0.9 }],
+        "categories:accessibility": ["error", { "minScore": 0.95 }],
+        "categories:seo":           ["error", { "minScore": 1.0 }],
+        "categories:best-practices":["warn",  { "minScore": 0.9 }],
+
+        "largest-contentful-paint": ["error", { "maxNumericValue": 2000 }],
+        "cumulative-layout-shift":  ["error", { "maxNumericValue": 0.05 }],
+        "total-blocking-time":      ["error", { "maxNumericValue": 200 }],
+        "speed-index":              ["warn",  { "maxNumericValue": 3000 }],
+        "interactive":              ["warn",  { "maxNumericValue": 3500 }],
+
+        "uses-responsive-images":   ["error", { "minScore": 1 }],
+        "modern-image-formats":     ["error", { "minScore": 1 }],
+        "uses-text-compression":    ["error", { "minScore": 1 }],
+        "font-display":             ["error", { "minScore": 1 }],
+        "unsized-images":           ["error", { "minScore": 1 }],
+        "prioritize-lcp-image":     ["warn",  { "minScore": 1 }],
+
+        "is-crawlable":             ["error", { "minScore": 1 }],
+        "document-title":           ["error", { "minScore": 1 }],
+        "meta-description":         ["error", { "minScore": 1 }],
+        "structured-data":          "off",
+
+        "color-contrast":           ["error", { "minScore": 1 }],
+        "image-alt":                ["error", { "minScore": 1 }],
+        "html-has-lang":            ["error", { "minScore": 1 }],
+
+        "unused-javascript":        ["warn",  { "maxLength": 2 }],
+        "legacy-javascript":        ["error", { "maxLength": 0 }]
+      }
+    },
+    "upload": {
+      "target": "filesystem",
+      "outputDir": "./.lighthouseci"
+    }
+  }
+}

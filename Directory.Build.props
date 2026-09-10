@@ -1,0 +1,71 @@
+<Project>
+
+  <!--
+    Prata - propriedades comuns a todos os projetos .NET.
+    Vale para src/ e tests/. Nenhum .csproj deve redefinir TargetFramework,
+    Nullable ou LangVersion: se um projeto precisa fugir daqui, o motivo vai
+    num comentario no proprio .csproj.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsNotAsErrors></WarningsNotAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      Produto brasileiro: precisamos de pt-BR de verdade para moeda, data e
+      ordenacao. InvariantGlobalization=true quebraria formatacao de R$ e a
+      comparacao de string acentuada. Nao ligar.
+    -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <PredefinedCulturesOnly>false</PredefinedCulturesOnly>
+    <NeutralLanguage>pt-BR</NeutralLanguage>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+    <DebugType>portable</DebugType>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Product>Prata</Product>
+    <Company>Prata</Company>
+    <Authors>Prata</Authors>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <!--
+    Regra de dependencia da Clean Architecture (docs/02-ARQUITETURA.md).
+    A checagem real vale mais que a intencao: o teste de arquitetura em
+    tests/Prata.Domain.Tests/ArchitectureTests.cs falha se alguem
+    referenciar para fora. Ver docs/15-ESTRATEGIA-DE-TESTES.md.
+  -->
+  <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('Prata.Domain'))">
+    <!-- Domain nao referencia nada. Documentacao XML ligada: e o contrato do negocio. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <CollectCoverage>true</CollectCoverage>
+  </PropertyGroup>
+
+  <ItemGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>
