@@ -335,6 +335,27 @@ public sealed class Order : AggregateRoot, ITenantOwned
         return Unit.Value;
     }
 
+    /// <summary>
+    /// Confirmado → Realizado (atalho E3→E5 enquanto nao ha Agenda).
+    /// Exige agora ≥ data pretendida do evento.
+    /// </summary>
+    public Result<Unit> MarcarRealizado(DateTimeOffset agora)
+    {
+        if (Status != OrderStatus.Confirmado)
+            return SalesErrors.TransicaoInvalida(Status, nameof(OrderStatus.Realizado));
+
+        var hoje = DateOnly.FromDateTime(agora.UtcDateTime.Date);
+        if (hoje < IntendedDate)
+            return Error.Validation(
+                "PEDIDO_EVENTO_FUTURO",
+                "Nao e possivel marcar Realizado antes da data pretendida."
+            );
+
+        Status = OrderStatus.Realizado;
+        Raise(new PedidoRealizado(TenantId, Id));
+        return Unit.Value;
+    }
+
     /// <summary>RN-BRF-030 — owner sempre ve; staff so se designado neste pedido.</summary>
     public bool PodeVerBriefingSensivel(Guid userId, bool isOwner) =>
         isOwner || _sensitiveStaffUserIds.Contains(userId);

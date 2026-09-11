@@ -29,3 +29,5 @@ public sealed record PedidoCancelado(Guid TenantId, Guid OrderId, string Motivo,
     : DomainEvent;
 
 public sealed record PedidoConfirmado(Guid TenantId, Guid OrderId) : DomainEvent;
+
+public sealed record PedidoRealizado(Guid TenantId, Guid OrderId) : DomainEvent;

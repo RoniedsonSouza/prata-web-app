@@ -77,12 +77,71 @@ public interface ISignatureProvider
 }
 
 /// <summary>
-/// Port do PSP. Implementacao Asaas fica em Infrastructure (ADR-0005).
+/// Port do PSP (ADR-0005). Implementacao Asaas em Infrastructure/Payments.
+/// Nunca aceita dado de cartao — so token do PSP (RN-FIN-002).
 /// </summary>
 public interface IPaymentGateway
 {
-    // Metodos concretos entram na E3. O port nasce na E1 para fechar a borda.
+    Task<Result<PayoutAccountRef>> CriarRecebedorAsync(RecebedorRequest request, CancellationToken cancellationToken);
+
+    Task<Result<KycStatusDto>> ConsultarKycAsync(PayoutAccountRef reference, CancellationToken cancellationToken);
+
+    Task<Result<ChargeRef>> CriarCobrancaAsync(ChargeRequest request, CancellationToken cancellationToken);
+
+    Task<Result<ChargeState>> ConsultarCobrancaAsync(ChargeRef reference, CancellationToken cancellationToken);
+
+    Task<Result<Unit>> CancelarCobrancaAsync(ChargeRef reference, CancellationToken cancellationToken);
+
+    Task<Result<RefundRef>> EstornarAsync(ChargeRef reference, Money? parcial, CancellationToken cancellationToken);
+
+    Result<WebhookEnvelope> VerificarEAnalisar(string rawBody, IReadOnlyDictionary<string, string> headers);
+
+    Task<Result<IReadOnlyList<SettlementLine>>> ObterExtratoAsync(
+        DateOnly de,
+        DateOnly ate,
+        CancellationToken cancellationToken
+    );
 }
+
+public sealed record PayoutAccountRef(string ExternalRecipientId);
+
+public sealed record RecebedorRequest(
+    Guid TenantId,
+    string Name,
+    string DocumentMasked,
+    string? PixKeyMasked,
+    string? Email
+);
+
+public sealed record KycStatusDto(string Status);
+
+public sealed record ChargeRef(string ExternalChargeId);
+
+public sealed record ChargeRequest(
+    Guid TenantId,
+    Guid PaymentId,
+    Money Amount,
+    string Method,
+    decimal PlatformFeePercent,
+    Money PlatformFeeAmount,
+    string RecipientExternalId,
+    string IdempotencyKey,
+    string? CreditCardToken
+);
+
+public sealed record ChargeState(string Status, DateTimeOffset? ConfirmedAt);
+
+public sealed record RefundRef(string ExternalRefundId);
+
+public sealed record WebhookEnvelope(
+    string ExternalEventId,
+    string EventType,
+    Guid? TenantId,
+    string? ExternalChargeId,
+    string PayloadJson
+);
+
+public sealed record SettlementLine(string ExternalChargeId, Money Amount, string Status, DateOnly Date);
 
 /// <summary>Repositorio de Client. Unicidade (tenant_id, email) na persistencia — RN-COM-012.</summary>
 public interface IClientRepository

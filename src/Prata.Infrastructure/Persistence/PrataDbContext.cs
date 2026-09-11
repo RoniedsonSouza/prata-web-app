@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Prata.Application.Abstractions;
+using Prata.Domain.Billing;
 using Prata.Domain.Briefing;
 using Prata.Domain.Catalog;
 using Prata.Domain.Common;
@@ -57,6 +58,22 @@ public sealed class PrataDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<BriefingConsent> BriefingConsents => Set<BriefingConsent>();
 
     public DbSet<NotificationMessage> NotificationMessages => Set<NotificationMessage>();
+
+    public DbSet<Payment> Payments => Set<Payment>();
+
+    public DbSet<Installment> Installments => Set<Installment>();
+
+    public DbSet<SplitRule> SplitRules => Set<SplitRule>();
+
+    public DbSet<PayoutAccount> PayoutAccounts => Set<PayoutAccount>();
+
+    public DbSet<Payout> Payouts => Set<Payout>();
+
+    public DbSet<PaymentEvent> PaymentEvents => Set<PaymentEvent>();
+
+    public DbSet<ReconciliationIssue> ReconciliationIssues => Set<ReconciliationIssue>();
+
+    public DbSet<Booking> Bookings => Set<Booking>();
 
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 

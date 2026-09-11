@@ -19,6 +19,7 @@ using Prata.Infrastructure.Imaging;
 using Prata.Infrastructure.Identity;
 using Prata.Infrastructure.Jobs;
 using Prata.Infrastructure.Notifications;
+using Prata.Infrastructure.Payments;
 using Prata.Infrastructure.Persistence;
 using Prata.Infrastructure.Storage;
 using System.IdentityModel.Tokens.Jwt;
@@ -42,6 +43,7 @@ public static class DependencyInjection
             sp.GetRequiredService<MutableTenantContext>()
         );
         services.AddScoped<INotifier, SmtpNotifier>();
+        services.AddSingleton<IPaymentGateway, FakePaymentGateway>();
         services.AddSingleton<ISignedFichaService, SignedFichaService>();
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
