@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Prata.Application.Abstractions;
+using Prata.Domain.Briefing;
 using Prata.Domain.Catalog;
 using Prata.Domain.Common;
+using Prata.Domain.Notifications;
+using Prata.Domain.Sales;
 using Prata.Domain.Showcase;
 using Prata.Domain.Tenancy;
 using Prata.Infrastructure.Identity;
@@ -36,6 +39,24 @@ public sealed class PrataDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<CollectionItem> CollectionItems => Set<CollectionItem>();
 
     public DbSet<PageContent> PageContents => Set<PageContent>();
+
+    public DbSet<Client> Clients => Set<Client>();
+
+    public DbSet<Order> Orders => Set<Order>();
+
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+
+    public DbSet<Quote> Quotes => Set<Quote>();
+
+    public DbSet<BriefingTemplate> BriefingTemplates => Set<BriefingTemplate>();
+
+    public DbSet<Question> BriefingQuestions => Set<Question>();
+
+    public DbSet<Answer> BriefingAnswers => Set<Answer>();
+
+    public DbSet<BriefingConsent> BriefingConsents => Set<BriefingConsent>();
+
+    public DbSet<NotificationMessage> NotificationMessages => Set<NotificationMessage>();
 
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 

@@ -72,6 +72,25 @@ public sealed class S3PortfolioUploadService(
 
         return Task.FromResult(new SignedUpload(url, baseKey, derivatives, expires));
     }
+
+    public async Task<byte[]?> TryDownloadAsync(string objectKey, CancellationToken cancellationToken = default)
+    {
+        var opts =
+            configuration.GetSection(StorageOptions.SectionName).Get<StorageOptions>()
+            ?? new StorageOptions();
+        try
+        {
+            using var response = await s3.GetObjectAsync(opts.BucketOriginals, objectKey, cancellationToken);
+            await using var stream = response.ResponseStream;
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms, cancellationToken);
+            return ms.ToArray();
+        }
+        catch (AmazonS3Exception)
+        {
+            return null;
+        }
+    }
 }
 
 public static class StorageServiceCollectionExtensions

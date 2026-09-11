@@ -13,6 +13,9 @@ public interface IPortfolioUploadService
         string contentType,
         CancellationToken cancellationToken = default
     );
+
+    /// <summary>Baixa bytes do objeto (ex.: embutir B8 na ficha). Null se ausente/Dev sem arquivo.</summary>
+    Task<byte[]?> TryDownloadAsync(string objectKey, CancellationToken cancellationToken = default);
 }
 
 public sealed record SignedUpload(
@@ -54,5 +57,13 @@ public sealed class DevPortfolioUploadService(IDateTimeProvider clock) : IPortfo
                 ExpiresAt: expires
             )
         );
+    }
+
+    public Task<byte[]?> TryDownloadAsync(string objectKey, CancellationToken cancellationToken = default)
+    {
+        _ = objectKey;
+        _ = cancellationToken;
+        // Dev nao persiste bytes; ficha segue sem imagem embutida.
+        return Task.FromResult<byte[]?>(null);
     }
 }

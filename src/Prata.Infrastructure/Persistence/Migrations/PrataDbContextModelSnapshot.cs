@@ -152,6 +152,242 @@ namespace Prata.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Prata.Domain.Briefing.Answer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("IsSensitive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_sensitive");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<string>("PromptSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("prompt_snapshot");
+
+                    b.Property<string>("QuestionCode")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("question_code");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("TypeSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("type_snapshot");
+
+                    b.Property<string>("ValueJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("value");
+
+                    b.HasKey("Id")
+                        .HasName("pk_briefing_answer");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_briefing_answer_tenant_id");
+
+                    b.HasIndex("TenantId", "IsSensitive")
+                        .HasDatabaseName("ix_briefing_answer_tenant_id_is_sensitive");
+
+                    b.HasIndex("TenantId", "OrderId", "QuestionCode")
+                        .IsUnique()
+                        .HasDatabaseName("ix_briefing_answer_tenant_id_order_id_question_code");
+
+                    b.ToTable("briefing_answer", (string)null);
+                });
+
+            modelBuilder.Entity("Prata.Domain.Briefing.BriefingConsent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("ConsentedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("consented_at");
+
+                    b.Property<string>("Ip")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("ip");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<string>("PurposeTextSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("purpose_text_snapshot");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("scope");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("UserAgent")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("user_agent");
+
+                    b.HasKey("Id")
+                        .HasName("pk_briefing_consent");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_briefing_consent_tenant_id");
+
+                    b.HasIndex("TenantId", "OrderId", "Scope")
+                        .HasDatabaseName("ix_briefing_consent_tenant_id_order_id_scope");
+
+                    b.ToTable("briefing_consent", (string)null);
+                });
+
+            modelBuilder.Entity("Prata.Domain.Briefing.BriefingTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_published");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<Guid>("ServiceTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("service_type_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_briefing_template");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_briefing_template_tenant_id");
+
+                    b.HasIndex("TenantId", "ServiceTypeId", "Version")
+                        .IsUnique()
+                        .HasDatabaseName("ix_briefing_template_tenant_id_service_type_id_version");
+
+                    b.ToTable("briefing_template", (string)null);
+                });
+
+            modelBuilder.Entity("Prata.Domain.Briefing.Question", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Block")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("block");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("code");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_required");
+
+                    b.Property<bool>("IsSensitive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_sensitive");
+
+                    b.Property<string>("Prompt")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("prompt");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<Guid>("TemplateId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("template_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("type");
+
+                    b.Property<string>("VisibleWhen")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("visible_when");
+
+                    b.Property<string>("_options")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("options_json");
+
+                    b.HasKey("Id")
+                        .HasName("pk_briefing_question");
+
+                    b.HasIndex("TemplateId")
+                        .HasDatabaseName("ix_briefing_question_template_id");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_briefing_question_tenant_id");
+
+                    b.HasIndex("TenantId", "TemplateId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("ix_briefing_question_tenant_id_template_id_code");
+
+                    b.ToTable("briefing_question", (string)null);
+                });
+
             modelBuilder.Entity("Prata.Domain.Catalog.Addon", b =>
                 {
                     b.Property<Guid>("Id")
@@ -260,6 +496,299 @@ namespace Prata.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_service_type_tenant_id_code");
 
                     b.ToTable("service_type", (string)null);
+                });
+
+            modelBuilder.Entity("Prata.Domain.Notifications.NotificationMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("idempotency_key");
+                    b.Property<string>("LastError")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("last_error");
+
+                    b.Property<string>("Recipient")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("recipient");
+
+                    b.Property<DateTimeOffset?>("SentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("subject");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("type");
+
+                    b.HasKey("Id")
+                        .HasName("pk_notification_message");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_notification_message_tenant_id");
+
+                    b.HasIndex("TenantId", "Recipient", "Type", "IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_notification_message_tenant_id_recipient_type_idempotency_k");
+
+                    b.ToTable("notification_message", (string)null);
+                });
+
+            modelBuilder.Entity("Prata.Domain.Sales.Client", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("PreferredChannel")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("preferred_channel");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("WhatsApp")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("whats_app");
+
+                    b.HasKey("Id")
+                        .HasName("pk_client");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_client_tenant_id");
+
+                    b.HasIndex("TenantId", "Email")
+                        .IsUnique()
+                        .HasDatabaseName("ix_client_tenant_id_email");
+
+                    b.ToTable("client", (string)null);
+                });
+
+            modelBuilder.Entity("Prata.Domain.Sales.Order", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("cancellation_reason");
+
+                    b.Property<Guid>("ClientId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("client_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasColumnType("numeric(14,2)")
+                        .HasColumnName("discount_amount");
+
+                    b.Property<string>("HoldReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("hold_reason");
+
+                    b.Property<DateOnly>("IntendedDate")
+                        .HasColumnType("date")
+                        .HasColumnName("intended_date");
+
+                    b.Property<string>("RefusalReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("refusal_reason");
+
+                    b.Property<Guid>("ServiceTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("service_type_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("StatusAntesDaEspera")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status_antes_da_espera");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasColumnType("numeric(14,2)")
+                        .HasColumnName("subtotal_amount");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<decimal>("Total")
+                        .HasColumnType("numeric(14,2)")
+                        .HasColumnName("total_amount");
+
+                    b.Property<string>("_sensitiveStaffUserIds")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("sensitive_staff_user_ids");
+
+                    b.HasKey("Id")
+                        .HasName("pk_order");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_order_tenant_id");
+
+                    b.HasIndex("TenantId", "IntendedDate")
+                        .HasDatabaseName("ix_order_tenant_id_intended_date");
+
+                    b.HasIndex("TenantId", "Status")
+                        .HasDatabaseName("ix_order_tenant_id_status");
+
+                    b.ToTable("order", (string)null);
+                });
+
+            modelBuilder.Entity("Prata.Domain.Sales.OrderItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CatalogItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("catalog_item_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("NameSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name_snapshot");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<decimal>("UnitPriceSnapshot")
+                        .HasColumnType("numeric(14,2)")
+                        .HasColumnName("unit_price_amount");
+
+                    b.HasKey("Id")
+                        .HasName("pk_order_item");
+
+                    b.HasIndex("OrderId")
+                        .HasDatabaseName("ix_order_item_order_id");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_order_item_tenant_id");
+
+                    b.HasIndex("TenantId", "OrderId")
+                        .HasDatabaseName("ix_order_item_tenant_id_order_id");
+
+                    b.ToTable("order_item", (string)null);
+                });
+
+            modelBuilder.Entity("Prata.Domain.Sales.Quote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("EmittedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("emitted_at");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<decimal>("TotalSnapshot")
+                        .HasColumnType("numeric(14,2)")
+                        .HasColumnName("total_amount");
+
+                    b.Property<DateTimeOffset>("ValidoAte")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("valido_ate");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_quote");
+
+                    b.HasIndex("OrderId")
+                        .HasDatabaseName("ix_quote_order_id");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_quote_tenant_id");
+
+                    b.HasIndex("TenantId", "OrderId", "Version")
+                        .IsUnique()
+                        .HasDatabaseName("ix_quote_tenant_id_order_id_version");
+
+                    b.ToTable("quote", (string)null);
                 });
 
             modelBuilder.Entity("Prata.Domain.Showcase.Collection", b =>
@@ -851,6 +1380,70 @@ namespace Prata.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_asp_net_user_tokens_asp_net_users_user_id");
                 });
 
+            modelBuilder.Entity("Prata.Domain.Briefing.Question", b =>
+                {
+                    b.HasOne("Prata.Domain.Briefing.BriefingTemplate", null)
+                        .WithMany("_questions")
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_briefing_question_briefing_template_template_id");
+                });
+
+            modelBuilder.Entity("Prata.Domain.Sales.Order", b =>
+                {
+                    b.OwnsOne("Prata.Domain.Sales.Discount", "Discount", b1 =>
+                        {
+                            b1.Property<Guid>("OrderId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("id");
+
+                            b1.Property<decimal?>("FixedAmount")
+                                .HasColumnType("numeric(14,2)")
+                                .HasColumnName("discount_fixed_amount");
+
+                            b1.Property<string>("Kind")
+                                .IsRequired()
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)")
+                                .HasColumnName("discount_kind");
+
+                            b1.Property<decimal?>("Percent")
+                                .HasColumnType("numeric(5,2)")
+                                .HasColumnName("discount_percent");
+
+                            b1.HasKey("OrderId");
+
+                            b1.ToTable("order");
+
+                            b1.WithOwner()
+                                .HasForeignKey("OrderId")
+                                .HasConstraintName("fk_order_order_id");
+                        });
+
+                    b.Navigation("Discount");
+                });
+
+            modelBuilder.Entity("Prata.Domain.Sales.OrderItem", b =>
+                {
+                    b.HasOne("Prata.Domain.Sales.Order", null)
+                        .WithMany("_items")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_order_item_order_order_id");
+                });
+
+            modelBuilder.Entity("Prata.Domain.Sales.Quote", b =>
+                {
+                    b.HasOne("Prata.Domain.Sales.Order", null)
+                        .WithMany("_quotes")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_quote_order_order_id");
+                });
+
             modelBuilder.Entity("Prata.Domain.Showcase.PageContent", b =>
                 {
                     b.OwnsOne("Prata.Domain.Showcase.SeoMeta", "Seo", b1 =>
@@ -982,6 +1575,18 @@ namespace Prata.Infrastructure.Persistence.Migrations
 
                     b.Navigation("Slug")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Prata.Domain.Briefing.BriefingTemplate", b =>
+                {
+                    b.Navigation("_questions");
+                });
+
+            modelBuilder.Entity("Prata.Domain.Sales.Order", b =>
+                {
+                    b.Navigation("_items");
+
+                    b.Navigation("_quotes");
                 });
 #pragma warning restore 612, 618
         }

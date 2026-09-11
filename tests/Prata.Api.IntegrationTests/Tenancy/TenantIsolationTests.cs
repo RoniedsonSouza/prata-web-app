@@ -2,8 +2,10 @@ using AwesomeAssertions;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Prata.Application.Abstractions;
+using Prata.Domain.Briefing;
 using Prata.Domain.Catalog;
 using Prata.Domain.Common;
+using Prata.Domain.Sales;
 using Prata.Domain.Tenancy;
 using Prata.Infrastructure.Persistence;
 
@@ -160,6 +162,70 @@ public sealed class TenantIsolationTests : IAsyncLifetime
         await cmd.ExecuteNonQueryAsync();
     }
 
+    [Fact]
+    public async Task RN_TEN_002_tenant_nao_le_cliente_do_vizinho()
+    {
+        Guid tenantA;
+        Guid tenantB;
+
+        await using (var owner = CreateOwnerContext())
+        {
+            (tenantA, tenantB) = await SeedTenantsAndClientsAsync(owner);
+        }
+
+        await using var contextA = CreateAppContext(tenantA);
+        await SetTenantGucAsync(contextA, tenantA);
+
+        var visible = await contextA.Clients.ToListAsync();
+
+        visible.Should().ContainSingle();
+        visible[0].TenantId.Should().Be(tenantA);
+        visible.Should().NotContain(c => c.TenantId == tenantB);
+    }
+
+    [Fact]
+    public async Task RN_TEN_002_tenant_nao_le_pedido_do_vizinho()
+    {
+        Guid tenantA;
+        Guid tenantB;
+        Guid orderB;
+
+        await using (var owner = CreateOwnerContext())
+        {
+            (tenantA, tenantB, orderB) = await SeedTenantsAndOrdersAsync(owner);
+        }
+
+        await using var contextA = CreateAppContext(tenantA);
+        await SetTenantGucAsync(contextA, tenantA);
+
+        var visible = await contextA.Orders.ToListAsync();
+        var vizinho = await contextA.Orders.FirstOrDefaultAsync(o => o.Id == orderB);
+
+        visible.Should().ContainSingle();
+        visible[0].TenantId.Should().Be(tenantA);
+        vizinho.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RN_TEN_002_tenant_nao_le_resposta_briefing_do_vizinho()
+    {
+        Guid tenantA;
+        Guid tenantB;
+
+        await using (var owner = CreateOwnerContext())
+        {
+            (tenantA, tenantB) = await SeedTenantsAndBriefingAnswersAsync(owner);
+        }
+
+        await using var contextA = CreateAppContext(tenantA);
+        await SetTenantGucAsync(contextA, tenantA);
+
+        var visible = await contextA.BriefingAnswers.ToListAsync();
+        visible.Should().ContainSingle();
+        visible[0].TenantId.Should().Be(tenantA);
+        visible.Should().NotContain(a => a.TenantId == tenantB);
+    }
+
     private static async Task<(Guid TenantA, Guid TenantB)> SeedTenantsAndPackagesAsync(PrataDbContext db)
     {
         var agora = DateTimeOffset.UtcNow;
@@ -179,6 +245,80 @@ public sealed class TenantIsolationTests : IAsyncLifetime
         db.Packages.AddRange(pkgA, pkgB);
         await db.SaveChangesAsync();
 
+        return (a.Id, b.Id);
+    }
+
+    private static async Task<(Guid TenantA, Guid TenantB)> SeedTenantsAndClientsAsync(PrataDbContext db)
+    {
+        var agora = DateTimeOffset.UtcNow;
+        var a = Tenant.Create("A", "estudio-a-cli", agora).Value;
+        var b = Tenant.Create("B", "estudio-b-cli", agora).Value;
+        db.Tenants.AddRange(a, b);
+        await db.SaveChangesAsync();
+
+        db.Clients.Add(Client.Create(a.Id, "Ana", "ana@a.com", null, PreferredChannel.Email).Value);
+        db.Clients.Add(Client.Create(b.Id, "Bruno", "bruno@b.com", null, PreferredChannel.WhatsApp).Value);
+        await db.SaveChangesAsync();
+        return (a.Id, b.Id);
+    }
+
+    private static async Task<(Guid TenantA, Guid TenantB, Guid OrderB)> SeedTenantsAndOrdersAsync(
+        PrataDbContext db
+    )
+    {
+        var agora = DateTimeOffset.UtcNow;
+        var a = Tenant.Create("A", "estudio-a-ord", agora).Value;
+        var b = Tenant.Create("B", "estudio-b-ord", agora).Value;
+        db.Tenants.AddRange(a, b);
+        await db.SaveChangesAsync();
+
+        var typeA = ServiceType.Create(a.Id, "studio", "Studio", 1);
+        var typeB = ServiceType.Create(b.Id, "studio", "Studio", 1);
+        db.ServiceTypes.AddRange(typeA, typeB);
+
+        var clientA = Client.Create(a.Id, "Ana", "ana-ord@a.com", null, PreferredChannel.Email).Value;
+        var clientB = Client.Create(b.Id, "Bruno", "bruno-ord@b.com", null, PreferredChannel.Email).Value;
+        db.Clients.AddRange(clientA, clientB);
+
+        var data = DateOnly.FromDateTime(agora.UtcDateTime.Date.AddDays(40));
+        var orderA = Order.Create(a.Id, clientA.Id, typeA.Id, data, agora).Value;
+        var orderB = Order.Create(b.Id, clientB.Id, typeB.Id, data, agora).Value;
+        db.Orders.AddRange(orderA, orderB);
+        await db.SaveChangesAsync();
+
+        return (a.Id, b.Id, orderB.Id);
+    }
+
+    private static async Task<(Guid TenantA, Guid TenantB)> SeedTenantsAndBriefingAnswersAsync(PrataDbContext db)
+    {
+        var agora = DateTimeOffset.UtcNow;
+        var a = Tenant.Create("A", "estudio-a-brf", agora).Value;
+        var b = Tenant.Create("B", "estudio-b-brf", agora).Value;
+        db.Tenants.AddRange(a, b);
+        await db.SaveChangesAsync();
+
+        var typeA = ServiceType.Create(a.Id, "studio", "Studio", 1);
+        var typeB = ServiceType.Create(b.Id, "studio", "Studio", 1);
+        db.ServiceTypes.AddRange(typeA, typeB);
+
+        var clientA = Client.Create(a.Id, "Ana", "ana-brf@a.com", null, PreferredChannel.Email).Value;
+        var clientB = Client.Create(b.Id, "Bruno", "bruno-brf@b.com", null, PreferredChannel.Email).Value;
+        db.Clients.AddRange(clientA, clientB);
+
+        var data = DateOnly.FromDateTime(agora.UtcDateTime.Date.AddDays(40));
+        var orderA = Order.Create(a.Id, clientA.Id, typeA.Id, data, agora).Value;
+        var orderB = Order.Create(b.Id, clientB.Id, typeB.Id, data, agora).Value;
+        db.Orders.AddRange(orderA, orderB);
+
+        var qA = Question.Create(a.Id, Guid.NewGuid(), "A2", "Local", QuestionType.Text, BriefingBlock.A, 1, true, false).Value;
+        var qB = Question.Create(b.Id, Guid.NewGuid(), "A2", "Local", QuestionType.Text, BriefingBlock.A, 1, true, false).Value;
+        db.BriefingAnswers.Add(
+            Answer.Create(a.Id, orderA.Id, qA, """{"text":"SP"}""", true, false).Value
+        );
+        db.BriefingAnswers.Add(
+            Answer.Create(b.Id, orderB.Id, qB, """{"text":"RJ"}""", true, false).Value
+        );
+        await db.SaveChangesAsync();
         return (a.Id, b.Id);
     }
 

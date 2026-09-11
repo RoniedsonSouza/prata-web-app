@@ -96,10 +96,9 @@ public class ArchitectureTests
             .Where(t => t.Namespace is not null && !t.Namespace.EndsWith(".Common", StringComparison.Ordinal))
             .ToArray();
 
-        // CollectionItem e filho de Collection — nao e ITenantOwned direto (herda via pai).
-        // Aceitamos filhos de agregado sem ITenantOwned se o pai tiver.
+        // CollectionItem e filho de Collection — historicamente isento na lista de roots
+        // (ja implementa ITenantOwned; mantemos o nome na exclusao por compatibilidade).
         var roots = businessEntities
-            .Where(t => typeof(AggregateRoot).IsAssignableFrom(t) || t.Name is not "CollectionItem")
             .Where(t => t.Name != "CollectionItem")
             .ToArray();
 

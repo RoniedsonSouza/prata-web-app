@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Prata.Api.Endpoints;
 using Prata.Api.Middleware;
+using Prata.Application;
 using Prata.Infrastructure;
 using Prata.Infrastructure.Persistence;
 using Scalar.AspNetCore;
@@ -62,6 +63,7 @@ try
         }
     );
 
+    builder.Services.AddPrataApplication();
     builder.Services.AddPrataInfrastructure(builder.Configuration);
     builder.Services.AddOpenApi();
     builder.Services.AddProblemDetails();
@@ -124,6 +126,9 @@ try
 
     app.MapAuthEndpoints();
     app.MapStudioEndpoints();
+    app.MapCommercialEndpoints();
+    app.MapBriefingEndpoints();
+    app.MapTemplateEditorEndpoints();
     app.MapPublicPortfolioEndpoints();
     app.MapPlatformAuthEndpoints();
     app.MapCriticalAuthorizationEndpoints();

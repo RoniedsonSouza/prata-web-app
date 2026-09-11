@@ -11,10 +11,14 @@ using Npgsql;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Prata.Application.Abstractions;
-using Prata.Application.Common;
+using Prata.Application.Briefing;
+using Prata.Application.Sales;
 using Prata.Domain.Tenancy;
+using Prata.Infrastructure.Briefing;
 using Prata.Infrastructure.Imaging;
 using Prata.Infrastructure.Identity;
+using Prata.Infrastructure.Jobs;
+using Prata.Infrastructure.Notifications;
 using Prata.Infrastructure.Persistence;
 using Prata.Infrastructure.Storage;
 using System.IdentityModel.Tokens.Jwt;
@@ -37,8 +41,8 @@ public static class DependencyInjection
         services.AddScoped<ITenantContextAccessor>(sp =>
             sp.GetRequiredService<MutableTenantContext>()
         );
-        services.AddPrataDispatcher();
-        services.AddScoped<INotifier, NullNotifier>();
+        services.AddScoped<INotifier, SmtpNotifier>();
+        services.AddSingleton<ISignedFichaService, SignedFichaService>();
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IAuthService, AuthService>();
@@ -138,6 +142,17 @@ public static class DependencyInjection
             );
         });
 
+        services.AddScoped<IClientRepository, ClientRepository>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<ICatalogReader, CatalogReader>();
+        services.AddScoped<ITenantReader, TenantReader>();
+        services.AddScoped<IBriefingTemplateRepository, BriefingTemplateRepository>();
+        services.AddScoped<IAnswerRepository, AnswerRepository>();
+        services.AddScoped<IBriefingConsentRepository, BriefingConsentRepository>();
+        services.AddScoped<IExpireQuotesProcessor, ExpireQuotesProcessor>();
+        services.AddScoped<IPurgeSensitiveBriefingProcessor, PurgeSensitiveBriefingProcessor>();
+        services.AddScoped<IDirectionSheetRenderer, DirectionSheetRenderer>();
+        services.AddScoped<IWhatsAppLinkGenerator, WhatsAppLinkGenerator>();
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<PrataDbContextUnitOfWork>());
         services.AddScoped<PrataDbContextUnitOfWork>();
 

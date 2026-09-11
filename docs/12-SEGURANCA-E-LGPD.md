@@ -94,9 +94,12 @@ reprova o PR.**
 | Dado | Onde | Finalidade | Base legal | Retenção |
 |---|---|---|---|---|
 | Nome, e-mail, WhatsApp do cliente | `client` | contato e execução do contrato | execução de contrato | 5 anos após conclusão |
-| Data e local do evento | `customer_order` | prestação do serviço | execução de contrato | 5 anos |
+| Data e local do evento | `order` | prestação do serviço | execução de contrato | 5 anos |
 | Respostas de briefing **não** sensíveis | `briefing_answer` | direção do ensaio | execução de contrato | 5 anos |
 | Respostas de briefing **sensíveis** (B3, B9, C2, C3, C4) | `briefing_answer` | acomodação e condução do ensaio | **consentimento específico** | **12 meses após a entrega** ([RN-LGP-004](06-REGRAS-DE-NEGOCIO.md)) |
+| Consentimento do bloco sensível (escopo, IP, UA, finalidade) | `briefing_consent` | prova de consentimento do bloco B | consentimento | enquanto houver dado sensível + 5 anos |
+| Destinatário e metadados de e-mail transacional (sem corpo sensível) | `notification_message` | idempotência e prova de envio ([RN-NOT-001](06-REGRAS-DE-NEGOCIO.md)) | legítimo interesse / execução de contrato | 12 meses |
+| Staff designado para briefing sensível (user ids) | `order.sensitive_staff_user_ids` | autorização RN-BRF-030 | legítimo interesse | vida do pedido |
 | Fotografias do cliente e de terceiros | storage + `photo` | entrega do serviço | execução de contrato | prazo contratual da galeria (padrão 12 meses), depois frio/arquivo |
 | Consentimento de uso de imagem | `briefing_answer` D4 + `contract` | uso em portfólio e redes | consentimento | enquanto a imagem for usada + 5 anos |
 | Consentimento do responsável por menor | `contract` | uso de imagem de menor | consentimento do responsável | idem |

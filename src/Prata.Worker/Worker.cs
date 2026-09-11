@@ -1,10 +1,14 @@
 using Prata.Infrastructure;
+using Prata.Infrastructure.Jobs;
 
 namespace Prata.Worker;
 
 public sealed class Worker(IServiceScopeFactory scopeFactory, ILogger<Worker> logger)
     : BackgroundService
 {
+    private DateOnly? _lastQuoteExpirationDay;
+    private DateOnly? _lastSensitivePurgeDay;
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
@@ -18,10 +22,33 @@ public sealed class Worker(IServiceScopeFactory scopeFactory, ILogger<Worker> lo
                 {
                     logger.LogInformation("Outbox processou {Count} mensagens", processed);
                 }
+
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+                if (_lastQuoteExpirationDay != today)
+                {
+                    var expire = scope.ServiceProvider.GetRequiredService<IExpireQuotesProcessor>();
+                    var expired = await expire.ExpirarAsync(stoppingToken);
+                    _lastQuoteExpirationDay = today;
+                    if (expired > 0)
+                    {
+                        logger.LogInformation("Expirou {Count} orcamentos", expired);
+                    }
+                }
+
+                if (_lastSensitivePurgeDay != today)
+                {
+                    var purge = scope.ServiceProvider.GetRequiredService<IPurgeSensitiveBriefingProcessor>();
+                    var purged = await purge.ExpurgarAsync(stoppingToken);
+                    _lastSensitivePurgeDay = today;
+                    if (purged > 0)
+                    {
+                        logger.LogInformation("Expurgou {Count} respostas sensiveis", purged);
+                    }
+                }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                logger.LogError(ex, "Falha ao processar outbox");
+                logger.LogError(ex, "Falha no worker");
             }
 
             await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);

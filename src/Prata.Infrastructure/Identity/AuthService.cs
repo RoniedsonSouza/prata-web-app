@@ -11,6 +11,7 @@ using Prata.Application.Abstractions;
 using Prata.Domain.Catalog;
 using Prata.Domain.Common;
 using Prata.Domain.Tenancy;
+using Prata.Infrastructure.Briefing;
 using Prata.Infrastructure.Persistence;
 
 namespace Prata.Infrastructure.Identity;
@@ -156,9 +157,15 @@ public sealed class AuthService(
 
         db.Tenants.Add(tenant);
 
-        foreach (var serviceType in ServiceType.CreateDefaultSeed(tenant.Id))
+        var serviceTypes = ServiceType.CreateDefaultSeed(tenant.Id);
+        foreach (var serviceType in serviceTypes)
         {
             db.ServiceTypes.Add(serviceType);
+        }
+
+        foreach (var template in BriefingTemplateSeeder.CreateForTenant(tenant.Id, serviceTypes))
+        {
+            db.BriefingTemplates.Add(template);
         }
 
         await EnsureRoleAsync(TenantRoles.Owner, ct);
@@ -566,6 +573,16 @@ public sealed class NullNotifier : INotifier
 {
     public Task SendEmailAsync(
         string to,
+        string subject,
+        string body,
+        CancellationToken cancellationToken = default
+    ) => Task.CompletedTask;
+
+    public Task SendTransactionalEmailAsync(
+        Guid tenantId,
+        string to,
+        string type,
+        string idempotencyKey,
         string subject,
         string body,
         CancellationToken cancellationToken = default
