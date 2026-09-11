@@ -98,6 +98,36 @@ public class PaymentAggregateTests
         result.IsFailure.Should().BeTrue();
         result.Error!.Value.Code.Should().Be("SPLIT_OBRIGATORIO");
     }
+
+    [Theory]
+    [InlineData(20)]
+    [InlineData(60)]
+    public void RN_FIN_010_sinal_fora_da_faixa_falha(decimal percent)
+    {
+        var result = PaymentFactory.Deposit(Money.Brl(1000m), percent);
+        result.IsFailure.Should().BeTrue();
+        result.Error!.Value.Code.Should().Be("SINAL_FORA_DA_FAIXA");
+    }
+
+    [Fact]
+    public void RN_FIN_012_fluxo_sinal_confirmado_habilita_confirmacao_do_pedido()
+    {
+        var payment = PaymentFactory.Deposit(Money.Brl(1000m), 40m).Value;
+        payment.Installments[0].MarcarProcessando(PaymentMethod.Pix).IsSuccess.Should().BeTrue();
+        payment.Installments[0].Confirmar(PaymentMethod.Pix, DateTimeOffset.UtcNow).IsSuccess.Should().BeTrue();
+        payment.RecalcularStatus();
+        payment.SinalConfirmado.Should().BeTrue();
+    }
+
+    [Fact]
+    public void RN_FIN_023_webhook_fora_de_ordem_nao_regride()
+    {
+        var parcela = InstallmentFactory.PixEm(InstallmentStatus.Liquidado);
+        var antes = parcela.Status;
+        var result = parcela.Confirmar(PaymentMethod.Pix, DateTimeOffset.UtcNow);
+        result.IsFailure.Should().BeTrue();
+        parcela.Status.Should().Be(antes);
+    }
 }
 
 public class PayoutKycTests
@@ -119,7 +149,9 @@ public class PayoutKycTests
     [Fact]
     public void RN_FIN_031_aprovar_kyc_libera_payout_bloqueado()
     {
-        var payout = Payout.AgendarOuBloquear(Guid.NewGuid(), Guid.NewGuid(), Money.Brl(50m), KycStatus.Pendente, DateTimeOffset.UtcNow).Value;
+        var payout = Payout
+            .AgendarOuBloquear(Guid.NewGuid(), Guid.NewGuid(), Money.Brl(50m), KycStatus.Pendente, DateTimeOffset.UtcNow)
+            .Value;
         payout.LiberarAposKyc(DateTimeOffset.UtcNow).IsSuccess.Should().BeTrue();
         payout.Status.Should().Be(PayoutStatus.Agendado);
     }
@@ -154,8 +186,7 @@ file static class PixTabela
         (InstallmentStatus.EstornoSolicitado, "ConfirmarEstorno"),
     ];
 
-    public static bool Permite(InstallmentStatus origem, string transicao) =>
-        Permitidas.Contains((origem, transicao));
+    public static bool Permite(InstallmentStatus origem, string transicao) => Permitidas.Contains((origem, transicao));
 }
 
 file static class InstallmentFactory
@@ -176,13 +207,7 @@ file static class InstallmentFactory
             InstallmentStatus.Liquidado => new[] { "MarcarProcessando", "Confirmar", "Liquidar" },
             InstallmentStatus.Repassado => new[] { "MarcarProcessando", "Confirmar", "Liquidar", "Repassar" },
             InstallmentStatus.EstornoSolicitado => new[] { "MarcarProcessando", "Confirmar", "SolicitarEstorno" },
-            InstallmentStatus.Estornado => new[]
-            {
-                "MarcarProcessando",
-                "Confirmar",
-                "SolicitarEstorno",
-                "ConfirmarEstorno",
-            },
+            InstallmentStatus.Estornado => new[] { "MarcarProcessando", "Confirmar", "SolicitarEstorno", "ConfirmarEstorno" },
             _ => Array.Empty<string>(),
         };
 

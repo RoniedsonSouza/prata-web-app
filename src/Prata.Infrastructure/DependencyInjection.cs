@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -11,18 +12,19 @@ using Npgsql;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Prata.Application.Abstractions;
+using Prata.Application.Billing;
 using Prata.Application.Briefing;
 using Prata.Application.Sales;
 using Prata.Domain.Tenancy;
+using Prata.Infrastructure.Billing;
 using Prata.Infrastructure.Briefing;
-using Prata.Infrastructure.Imaging;
 using Prata.Infrastructure.Identity;
+using Prata.Infrastructure.Imaging;
 using Prata.Infrastructure.Jobs;
 using Prata.Infrastructure.Notifications;
 using Prata.Infrastructure.Payments;
 using Prata.Infrastructure.Persistence;
 using Prata.Infrastructure.Storage;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace Prata.Infrastructure;
 
@@ -31,19 +33,18 @@ public static class DependencyInjection
     public const string OwnerConnectionName = "PrataOwner";
     public const string AppConnectionName = "PrataApp";
 
-    public static IServiceCollection AddPrataInfrastructure(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
+    public static IServiceCollection AddPrataInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
         services.AddScoped<MutableTenantContext>();
         services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<MutableTenantContext>());
-        services.AddScoped<ITenantContextAccessor>(sp =>
-            sp.GetRequiredService<MutableTenantContext>()
-        );
+        services.AddScoped<ITenantContextAccessor>(sp => sp.GetRequiredService<MutableTenantContext>());
         services.AddScoped<INotifier, SmtpNotifier>();
         services.AddSingleton<IPaymentGateway, FakePaymentGateway>();
+        services.AddScoped<IDepositPaymentService, DepositPaymentService>();
+        services.AddScoped<IOrderConfirmationService, OrderConfirmationService>();
+        services.AddScoped<IWebhookPaymentProcessor, WebhookPaymentProcessor>();
+        services.AddScoped<IReconcilePaymentsProcessor, ReconcilePaymentsProcessor>();
         services.AddSingleton<ISignedFichaService, SignedFichaService>();
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
@@ -58,9 +59,7 @@ public static class DependencyInjection
             configuration.GetConnectionString(AppConnectionName)
             ?? configuration.GetConnectionString("Prata")
             ?? configuration.GetConnectionString("Default")
-            ?? throw new InvalidOperationException(
-                "Connection string PrataApp (ou Default) e obrigatoria."
-            );
+            ?? throw new InvalidOperationException("Connection string PrataApp (ou Default) e obrigatoria.");
 
         EnsureNotOwnerRole(appConnection, configuration);
 
@@ -89,8 +88,7 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<PrataDbContext>()
             .AddDefaultTokenProviders();
 
-        var jwt =
-            configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
+        var jwt = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
         services
             .AddAuthentication(options =>
             {
@@ -110,9 +108,7 @@ public static class DependencyInjection
                     ValidAudience = jwt.Audience,
                     IssuerSigningKey = new SymmetricSecurityKey(
                         Encoding.UTF8.GetBytes(
-                            string.IsNullOrWhiteSpace(jwt.SigningKey)
-                                ? "DEV_ONLY_CHANGE_ME_32CHARS_MINIMUM!!"
-                                : jwt.SigningKey
+                            string.IsNullOrWhiteSpace(jwt.SigningKey) ? "DEV_ONLY_CHANGE_ME_32CHARS_MINIMUM!!" : jwt.SigningKey
                         )
                     ),
                     ClockSkew = TimeSpan.FromMinutes(1),
@@ -130,17 +126,12 @@ public static class DependencyInjection
         {
             options.AddPolicy(
                 "PlatformAdmin",
-                policy => policy.RequireAssertion(ctx =>
-                    ctx.User.IsInRole("platform.admin")
-                    || ctx.User.HasClaim("role", "platform.admin")
-                )
+                policy => policy.RequireAssertion(ctx => ctx.User.IsInRole("platform.admin") || ctx.User.HasClaim("role", "platform.admin"))
             );
             options.AddPolicy(
                 "TenantOwner",
-                policy => policy.RequireAssertion(ctx =>
-                    ctx.User.IsInRole(TenantRoles.Owner)
-                    || ctx.User.HasClaim("role", TenantRoles.Owner)
-                )
+                policy =>
+                    policy.RequireAssertion(ctx => ctx.User.IsInRole(TenantRoles.Owner) || ctx.User.HasClaim("role", TenantRoles.Owner))
             );
         });
 
@@ -161,10 +152,7 @@ public static class DependencyInjection
         return services;
     }
 
-    private static IServiceCollection AddOpenTelemetryPrata(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
+    private static IServiceCollection AddOpenTelemetryPrata(this IServiceCollection services, IConfiguration configuration)
     {
         var otlp = configuration["OpenTelemetry:OtlpEndpoint"];
         services
@@ -172,10 +160,7 @@ public static class DependencyInjection
             .ConfigureResource(r => r.AddService("Prata.Api"))
             .WithTracing(tracing =>
             {
-                tracing
-                    .AddAspNetCoreInstrumentation()
-                    .AddHttpClientInstrumentation()
-                    .AddNpgsql();
+                tracing.AddAspNetCoreInstrumentation().AddHttpClientInstrumentation().AddNpgsql();
                 if (!string.IsNullOrWhiteSpace(otlp))
                 {
                     tracing.AddOtlpExporter(o => o.Endpoint = new Uri(otlp));
@@ -189,17 +174,12 @@ public static class DependencyInjection
     /// </summary>
     public static void EnsureNotOwnerRole(string appConnection, IConfiguration configuration)
     {
-        var ownerConnection =
-            configuration.GetConnectionString(OwnerConnectionName)
-            ?? configuration.GetConnectionString("PrataMigration");
+        var ownerConnection = configuration.GetConnectionString(OwnerConnectionName) ?? configuration.GetConnectionString("PrataMigration");
         if (
-            !string.IsNullOrWhiteSpace(ownerConnection)
-            && string.Equals(appConnection, ownerConnection, StringComparison.OrdinalIgnoreCase)
+            !string.IsNullOrWhiteSpace(ownerConnection) && string.Equals(appConnection, ownerConnection, StringComparison.OrdinalIgnoreCase)
         )
         {
-            throw new InvalidOperationException(
-                "API recusou subir: connection string de aplicacao nao pode ser a do owner (RN-TEN-012)."
-            );
+            throw new InvalidOperationException("API recusou subir: connection string de aplicacao nao pode ser a do owner (RN-TEN-012).");
         }
 
         if (
@@ -208,17 +188,14 @@ public static class DependencyInjection
             || appConnection.Contains("User Id=prata_owner", StringComparison.OrdinalIgnoreCase)
         )
         {
-            throw new InvalidOperationException(
-                "API recusou subir: conexao como prata_owner e proibida em runtime (RN-TEN-012)."
-            );
+            throw new InvalidOperationException("API recusou subir: conexao como prata_owner e proibida em runtime (RN-TEN-012).");
         }
     }
 }
 
 internal sealed class PrataDbContextUnitOfWork(PrataDbContext dbContext) : IUnitOfWork
 {
-    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
-        dbContext.SaveChangesAsync(cancellationToken);
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) => dbContext.SaveChangesAsync(cancellationToken);
 }
 
 public interface IOutboxProcessor
@@ -239,9 +216,7 @@ public sealed class OutboxProcessor(
         var derivativeCount = await derivatives.ProcessPendingAsync(cancellationToken);
 
         var pending = await db
-            .OutboxMessages.Where(m =>
-                m.ProcessedAt == null && m.Type != "GerarDerivadasPortfolio"
-            )
+            .OutboxMessages.Where(m => m.ProcessedAt == null && m.Type != "GerarDerivadasPortfolio")
             .OrderBy(m => m.OccurredAt)
             .Take(50)
             .ToListAsync(cancellationToken);

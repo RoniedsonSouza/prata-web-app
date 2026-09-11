@@ -1,4 +1,5 @@
 using Prata.Application.Abstractions;
+using Prata.Application.Billing;
 using Prata.Application.Common;
 using Prata.Domain.Catalog;
 using Prata.Domain.Common;
@@ -57,13 +58,7 @@ public sealed class CreateOrderHandler(
             client = existing;
         }
 
-        var orderResult = Order.Create(
-            tenantId,
-            client.Id,
-            command.ServiceTypeId,
-            command.IntendedDate,
-            clock.UtcNow
-        );
+        var orderResult = Order.Create(tenantId, client.Id, command.ServiceTypeId, command.IntendedDate, clock.UtcNow);
         if (orderResult.IsFailure)
             return Result.Failure<Guid>(orderResult.Error!.Value);
 
@@ -75,13 +70,7 @@ public sealed class CreateOrderHandler(
             if (package is null || package.Status != PackageStatus.Publicado || package.Price is null)
                 return Error.Validation("PACOTE_INDISPONIVEL", "Pacote nao disponivel para pedido.");
 
-            var add = order.AdicionarItem(
-                OrderItemKind.Package,
-                package.Id,
-                package.Name,
-                package.Price.Value,
-                quantity: 1
-            );
+            var add = order.AdicionarItem(OrderItemKind.Package, package.Id, package.Name, package.Price.Value, quantity: 1);
             if (add.IsFailure)
                 return Result.Failure<Guid>(add.Error!.Value);
         }
@@ -203,10 +192,7 @@ public sealed class SendQuoteHandler(
         if (order is null)
             return Error.Validation("PEDIDO_NAO_ENCONTRADO", "Pedido nao encontrado.");
 
-        var validity =
-            command.ValidadeDias
-            ?? await tenants.GetQuoteValidityDaysAsync(tenantId, cancellationToken)
-            ?? 7;
+        var validity = command.ValidadeDias ?? await tenants.GetQuoteValidityDaysAsync(tenantId, cancellationToken) ?? 7;
 
         var result = order.EnviarOrcamento(clock.UtcNow, validity);
         if (result.IsFailure)
@@ -239,6 +225,7 @@ public sealed class ApproveQuoteHandler(
     IOrderRepository orders,
     IClientRepository clients,
     INotifier notifier,
+    IDispatcher dispatcher,
     IUnitOfWork uow
 ) : ICommandHandler<ApproveQuoteCommand, Unit>
 {
@@ -257,6 +244,11 @@ public sealed class ApproveQuoteHandler(
 
         await uow.SaveChangesAsync(cancellationToken);
 
+        // RN-FIN-012 — cria cobranca de sinal com split.
+        var deposit = await dispatcher.Send(new CreateDepositPaymentCommand(order.Id), cancellationToken);
+        if (deposit.IsFailure)
+            return Result.Failure<Unit>(deposit.Error!.Value);
+
         await CommercialNotification.TrySendAsync(
             notifier,
             clients,
@@ -265,7 +257,7 @@ public sealed class ApproveQuoteHandler(
             NotificationTypes.OrcamentoAprovado,
             order.Id.ToString("N"),
             "Orcamento aprovado",
-            "Recebemos a aprovacao do orcamento. O estudio entra em contato com os proximos passos.",
+            "Recebemos a aprovacao. O sinal foi gerado — acesse o portal para pagar.",
             cancellationToken
         );
 
@@ -328,11 +320,7 @@ public interface ICatalogReader
 
     Task<Addon?> GetAddonAsync(Guid tenantId, Guid addonId, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<Package>> ListPublishedPackagesAsync(
-        Guid tenantId,
-        Guid serviceTypeId,
-        CancellationToken cancellationToken
-    );
+    Task<IReadOnlyList<Package>> ListPublishedPackagesAsync(Guid tenantId, Guid serviceTypeId, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<Addon>> ListActiveAddonsAsync(Guid tenantId, CancellationToken cancellationToken);
 }
@@ -347,9 +335,5 @@ public interface ITenantReader
 /// </summary>
 public interface IBriefingCompletenessChecker
 {
-    Task<IReadOnlyList<string>> GetRequiredPendingAsync(
-        Guid tenantId,
-        Guid orderId,
-        CancellationToken cancellationToken
-    );
+    Task<IReadOnlyList<string>> GetRequiredPendingAsync(Guid tenantId, Guid orderId, CancellationToken cancellationToken);
 }

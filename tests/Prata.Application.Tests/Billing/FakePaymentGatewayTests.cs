@@ -41,4 +41,20 @@ public class FakePaymentGatewayTests
         result.IsFailure.Should().BeTrue();
         result.Error!.Value.Code.Should().Be("WEBHOOK_ASSINATURA_INVALIDA");
     }
+
+    [Fact]
+    public void RN_FIN_020_payload_inclui_chargeId()
+    {
+        var gateway = new FakePaymentGateway();
+        var tenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var result = gateway.VerificarEAnalisar(
+            $"evt-1|PAYMENT_RECEIVED|{tenantId:D}|chg_abc|{{}}",
+            new Dictionary<string, string> { ["asaas-access-token"] = "sandbox-ok" }
+        );
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.ExternalChargeId.Should().Be("chg_abc");
+        result.Value.PayloadJson.Should().Contain("chargeId");
+        result.Value.PayloadJson.Should().Contain("chg_abc");
+    }
 }
