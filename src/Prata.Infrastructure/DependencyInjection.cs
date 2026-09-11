@@ -15,8 +15,8 @@ using Prata.Application.Briefing;
 using Prata.Application.Sales;
 using Prata.Domain.Tenancy;
 using Prata.Infrastructure.Briefing;
-using Prata.Infrastructure.Imaging;
 using Prata.Infrastructure.Identity;
+using Prata.Infrastructure.Imaging;
 using Prata.Infrastructure.Jobs;
 using Prata.Infrastructure.Notifications;
 using Prata.Infrastructure.Payments;
@@ -50,6 +50,7 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IOutboxProcessor, OutboxProcessor>();
         services.AddScoped<PortfolioDerivativeProcessor>();
+        services.AddScoped<GalleryOutboxProcessor>();
         services.AddPrataStorage(configuration);
         services.AddHttpClient("revalidate");
         services.AddOpenTelemetryPrata(configuration);
@@ -152,6 +153,7 @@ public static class DependencyInjection
         services.AddScoped<IAnswerRepository, AnswerRepository>();
         services.AddScoped<IBriefingConsentRepository, BriefingConsentRepository>();
         services.AddScoped<IExpireQuotesProcessor, ExpireQuotesProcessor>();
+        services.AddScoped<IExpireGalleriesProcessor, ExpireGalleriesProcessor>();
         services.AddScoped<IPurgeSensitiveBriefingProcessor, PurgeSensitiveBriefingProcessor>();
         services.AddScoped<IDirectionSheetRenderer, DirectionSheetRenderer>();
         services.AddScoped<IWhatsAppLinkGenerator, WhatsAppLinkGenerator>();
@@ -231,16 +233,21 @@ public sealed class OutboxProcessor(
     IDateTimeProvider clock,
     IHttpClientFactory httpClientFactory,
     IConfiguration configuration,
-    PortfolioDerivativeProcessor derivatives
+    PortfolioDerivativeProcessor derivatives,
+    GalleryOutboxProcessor galleryOutbox
 ) : IOutboxProcessor
 {
     public async Task<int> ProcessPendingAsync(CancellationToken cancellationToken = default)
     {
         var derivativeCount = await derivatives.ProcessPendingAsync(cancellationToken);
+        var galleryCount = await galleryOutbox.ProcessPendingAsync(cancellationToken);
 
         var pending = await db
             .OutboxMessages.Where(m =>
-                m.ProcessedAt == null && m.Type != "GerarDerivadasPortfolio"
+                m.ProcessedAt == null
+                && m.Type != "GerarDerivadasPortfolio"
+                && m.Type != "GerarDerivadasGaleria"
+                && m.Type != "MontarZipGaleria"
             )
             .OrderBy(m => m.OccurredAt)
             .Take(50)
@@ -261,7 +268,7 @@ public sealed class OutboxProcessor(
             await db.SaveChangesAsync(cancellationToken);
         }
 
-        return pending.Count + derivativeCount;
+        return pending.Count + derivativeCount + galleryCount;
     }
 
     private async Task TryRevalidateAsync(string payload, CancellationToken cancellationToken)

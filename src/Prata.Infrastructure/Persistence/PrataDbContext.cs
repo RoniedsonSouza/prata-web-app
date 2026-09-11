@@ -5,6 +5,7 @@ using Prata.Domain.Billing;
 using Prata.Domain.Briefing;
 using Prata.Domain.Catalog;
 using Prata.Domain.Common;
+using Prata.Domain.Delivery;
 using Prata.Domain.Notifications;
 using Prata.Domain.Sales;
 using Prata.Domain.Showcase;
@@ -74,6 +75,18 @@ public sealed class PrataDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<ReconciliationIssue> ReconciliationIssues => Set<ReconciliationIssue>();
 
     public DbSet<Booking> Bookings => Set<Booking>();
+
+    public DbSet<Gallery> Galleries => Set<Gallery>();
+
+    public DbSet<Photo> Photos => Set<Photo>();
+
+    public DbSet<PhotoVariant> PhotoVariants => Set<PhotoVariant>();
+
+    public DbSet<Selection> Selections => Set<Selection>();
+
+    public DbSet<ShareLink> ShareLinks => Set<ShareLink>();
+
+    public DbSet<DownloadJob> DownloadJobs => Set<DownloadJob>();
 
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 

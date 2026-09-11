@@ -16,6 +16,12 @@ public interface IPortfolioUploadService
 
     /// <summary>Baixa bytes do objeto (ex.: embutir B8 na ficha). Null se ausente/Dev sem arquivo.</summary>
     Task<byte[]?> TryDownloadAsync(string objectKey, CancellationToken cancellationToken = default);
+
+    Task<string> CreatePresignedDownloadUrlAsync(
+        string objectKey,
+        TimeSpan ttl,
+        CancellationToken cancellationToken = default
+    );
 }
 
 public sealed record SignedUpload(
@@ -65,5 +71,18 @@ public sealed class DevPortfolioUploadService(IDateTimeProvider clock) : IPortfo
         _ = cancellationToken;
         // Dev nao persiste bytes; ficha segue sem imagem embutida.
         return Task.FromResult<byte[]?>(null);
+    }
+
+    public Task<string> CreatePresignedDownloadUrlAsync(
+        string objectKey,
+        TimeSpan ttl,
+        CancellationToken cancellationToken = default
+    )
+    {
+        _ = cancellationToken;
+        var expires = clock.UtcNow.Add(ttl).ToUnixTimeSeconds();
+        return Task.FromResult(
+            $"https://download.local.dev/{objectKey}?expires={expires}"
+        );
     }
 }

@@ -5,6 +5,7 @@ using Prata.Application.Abstractions;
 using Prata.Domain.Briefing;
 using Prata.Domain.Catalog;
 using Prata.Domain.Common;
+using Prata.Domain.Delivery;
 using Prata.Domain.Sales;
 using Prata.Domain.Tenancy;
 using Prata.Infrastructure.Persistence;
@@ -289,6 +290,29 @@ public sealed class TenantIsolationTests : IAsyncLifetime
         return (a.Id, b.Id, orderB.Id);
     }
 
+    [Fact]
+    public async Task RN_TEN_002_tenant_nao_le_galeria_do_vizinho()
+    {
+        Guid tenantA;
+        Guid tenantB;
+        Guid galleryB;
+
+        await using (var owner = CreateOwnerContext())
+        {
+            (tenantA, tenantB, galleryB) = await SeedTenantsAndGalleriesAsync(owner);
+        }
+
+        await using var contextA = CreateAppContext(tenantA);
+        await SetTenantGucAsync(contextA, tenantA);
+
+        var visible = await contextA.Galleries.ToListAsync();
+        var vizinho = await contextA.Galleries.FirstOrDefaultAsync(g => g.Id == galleryB);
+
+        visible.Should().ContainSingle();
+        visible[0].TenantId.Should().Be(tenantA);
+        vizinho.Should().BeNull();
+    }
+
     private static async Task<(Guid TenantA, Guid TenantB)> SeedTenantsAndBriefingAnswersAsync(PrataDbContext db)
     {
         var agora = DateTimeOffset.UtcNow;
@@ -320,6 +344,38 @@ public sealed class TenantIsolationTests : IAsyncLifetime
         );
         await db.SaveChangesAsync();
         return (a.Id, b.Id);
+    }
+
+    private static async Task<(Guid TenantA, Guid TenantB, Guid GalleryB)> SeedTenantsAndGalleriesAsync(
+        PrataDbContext db
+    )
+    {
+        var agora = DateTimeOffset.UtcNow;
+        var a = Tenant.Create("A", "estudio-a-gal", agora).Value;
+        var b = Tenant.Create("B", "estudio-b-gal", agora).Value;
+        db.Tenants.AddRange(a, b);
+        await db.SaveChangesAsync();
+
+        var typeA = ServiceType.Create(a.Id, "studio", "Studio", 1);
+        var typeB = ServiceType.Create(b.Id, "studio", "Studio", 1);
+        db.ServiceTypes.AddRange(typeA, typeB);
+        var clientA = Client.Create(a.Id, "Ana", "ana-gal@a.com", null, PreferredChannel.Email).Value;
+        var clientB = Client.Create(b.Id, "Bruno", "bruno-gal@b.com", null, PreferredChannel.Email).Value;
+        db.Clients.AddRange(clientA, clientB);
+        var data = DateOnly.FromDateTime(agora.UtcDateTime.Date.AddDays(40));
+        var orderA = Order.Create(a.Id, clientA.Id, typeA.Id, data, agora).Value;
+        var orderB = Order.Create(b.Id, clientB.Id, typeB.Id, data, agora).Value;
+        db.Orders.AddRange(orderA, orderB);
+
+        var galA = Gallery
+            .Create(a.Id, orderA.Id, 50, PortfolioConsent.Sim, false, agora.AddMonths(12), agora)
+            .Value;
+        var galB = Gallery
+            .Create(b.Id, orderB.Id, 50, PortfolioConsent.Sim, false, agora.AddMonths(12), agora)
+            .Value;
+        db.Galleries.AddRange(galA, galB);
+        await db.SaveChangesAsync();
+        return (a.Id, b.Id, galB.Id);
     }
 
     private PrataDbContext CreateOwnerContext(string? cs = null)

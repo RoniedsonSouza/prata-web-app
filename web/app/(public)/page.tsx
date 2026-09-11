@@ -1,4 +1,5 @@
 import { EditorialMotion } from "@/components/editorial-motion";
+import { PublicImmersiveShell } from "@/components/public-immersive-shell";
 import { SentryTenantProvider } from "@/components/sentry-tenant-provider";
 import { Button } from "@/components/ui/button";
 
@@ -20,6 +21,7 @@ export default async function PublicHomePage() {
       />
       <EditorialMotion />
       <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(ellipse_at_top,_#f7f3eb_0%,_#e8e2d6_45%,_#d4cfc4_100%)] text-stone-900">
+        <PublicImmersiveShell />
         <div
           data-parallax
           className="pointer-events-none absolute inset-x-0 top-0 h-[70vh] bg-[url('/hero-grain.svg')] bg-cover opacity-40"
