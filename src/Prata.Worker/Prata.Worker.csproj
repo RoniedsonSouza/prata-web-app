@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+  <PropertyGroup>
+    <UserSecretsId>dotnet-Prata.Worker-5536d3f1-22e9-42a5-80f7-7af87e2d06fe</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Prata.Application\Prata.Application.csproj" />
+    <ProjectReference Include="..\Prata.Infrastructure\Prata.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Newtonsoft.Json" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,3 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Domain: zero PackageReference. A regra de dependencia e o contrato. -->
+</Project>

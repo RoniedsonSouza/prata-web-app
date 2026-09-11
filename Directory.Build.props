@@ -64,7 +64,7 @@
     <CollectCoverage>true</CollectCoverage>
   </PropertyGroup>
 
-  <ItemGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
+  <ItemGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
     <Using Include="Xunit" />
   </ItemGroup>
 

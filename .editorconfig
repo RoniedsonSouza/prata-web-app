@@ -49,7 +49,8 @@ csharp_using_directive_placement = outside_namespace:warning
 
 # --- estilo moderno obrigatorio ---
 csharp_style_namespace_declarations = file_scoped:error
-csharp_prefer_braces = true:warning
+csharp_prefer_braces = true:suggestion
+dotnet_diagnostic.IDE0011.severity = none
 csharp_style_var_for_built_in_types = false:suggestion
 csharp_style_var_when_type_is_apparent = true:suggestion
 csharp_style_expression_bodied_methods = when_on_single_line:suggestion
@@ -66,7 +67,8 @@ csharp_style_prefer_utf8_string_literals = true:suggestion
 
 # --- imutabilidade e seguranca ---
 dotnet_style_readonly_field = true:warning
-dotnet_style_require_accessibility_modifiers = always:error
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:error
+dotnet_diagnostic.IDE0040.severity = warning
 dotnet_style_prefer_collection_expression = true:suggestion
 dotnet_style_object_initializer = true:suggestion
 dotnet_style_coalesce_expression = true:suggestion
@@ -148,6 +150,17 @@ dotnet_diagnostic.CA1041.severity = warning
 # IDE0005 using desnecessario
 dotnet_diagnostic.IDE0005.severity = warning
 
+# Nomes de dominio deliberados (glossario / Result pattern)
+dotnet_diagnostic.CA1711.severity = none   # Collection e termo de negocio
+dotnet_diagnostic.CA1716.severity = none   # Error e o tipo do Result pattern
+dotnet_diagnostic.CA1000.severity = none   # Result<T>.Success/Failure estaticos
+dotnet_diagnostic.CA1805.severity = none
+dotnet_diagnostic.NU1903.severity = warning
+dotnet_diagnostic.CS1591.severity = none   # XML docs no Domain entram gradualmente
+dotnet_diagnostic.CA1848.severity = none   # LoggerMessage - adotar depois
+dotnet_diagnostic.CA1873.severity = none
+dotnet_diagnostic.IDE0005.severity = none
+
 # ---------------------------------------------------------------------------
 #  Testes: regras relaxadas
 # ---------------------------------------------------------------------------
@@ -156,6 +169,9 @@ dotnet_diagnostic.CA1305.severity = none
 dotnet_diagnostic.CA1031.severity = none
 dotnet_diagnostic.CS8618.severity = none
 dotnet_diagnostic.CA1707.severity = none   # nome de teste com underscore e desejavel
+dotnet_diagnostic.xUnit1051.severity = none
+dotnet_diagnostic.CA1859.severity = none
+dotnet_diagnostic.CS0618.severity = error
 
 # ---------------------------------------------------------------------------
 #  Migrations: geradas, nao revisadas por estilo

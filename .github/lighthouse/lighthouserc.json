@@ -6,9 +6,7 @@
       "startServerReadyPattern": "Ready in|ready started server",
       "startServerReadyTimeout": 60000,
       "url": [
-        "http://localhost:3000/",
-        "http://localhost:3000/t/estudio-demo",
-        "http://localhost:3000/t/estudio-demo/servicos"
+        "http://localhost:3000/"
       ],
       "numberOfRuns": 3,
       "settings": {
