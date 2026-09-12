@@ -91,6 +91,26 @@ public sealed class S3PortfolioUploadService(
             return null;
         }
     }
+
+    public Task<string> CreatePresignedDownloadUrlAsync(
+        string objectKey,
+        TimeSpan ttl,
+        CancellationToken cancellationToken = default
+    )
+    {
+        _ = cancellationToken;
+        var opts =
+            configuration.GetSection(StorageOptions.SectionName).Get<StorageOptions>()
+            ?? new StorageOptions();
+        var request = new GetPreSignedUrlRequest
+        {
+            BucketName = opts.BucketOriginals,
+            Key = objectKey,
+            Verb = HttpVerb.GET,
+            Expires = clock.UtcNow.Add(ttl).UtcDateTime,
+        };
+        return Task.FromResult(s3.GetPreSignedURL(request));
+    }
 }
 
 public static class StorageServiceCollectionExtensions

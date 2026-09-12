@@ -8,6 +8,7 @@ public sealed class Worker(IServiceScopeFactory scopeFactory, ILogger<Worker> lo
     private DateOnly? _lastQuoteExpirationDay;
     private DateOnly? _lastSensitivePurgeDay;
     private DateOnly? _lastReconcileDay;
+    private DateOnly? _lastGalleryExpirationDay;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -53,6 +54,15 @@ public sealed class Worker(IServiceScopeFactory scopeFactory, ILogger<Worker> lo
                     _lastReconcileDay = today;
                     if (n > 0)
                         logger.LogInformation("Conciliação abriu {Count} divergencias", n);
+                }
+
+                if (_lastGalleryExpirationDay != today)
+                {
+                    var galleries = scope.ServiceProvider.GetRequiredService<IExpireGalleriesProcessor>();
+                    var n = await galleries.ProcessAsync(stoppingToken);
+                    _lastGalleryExpirationDay = today;
+                    if (n > 0)
+                        logger.LogInformation("Expirou {Count} galerias", n);
                 }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

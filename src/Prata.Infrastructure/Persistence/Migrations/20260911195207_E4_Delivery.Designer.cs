@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Prata.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using Prata.Infrastructure.Persistence;
 namespace Prata.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(PrataDbContext))]
-    partial class PrataDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260911195207_E4_Delivery")]
+    partial class E4_Delivery
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
