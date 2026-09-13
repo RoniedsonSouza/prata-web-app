@@ -32,6 +32,9 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(o => o.ClientId).IsRequired();
         builder.Property(o => o.ServiceTypeId).IsRequired();
         builder.Property(o => o.IntendedDate).IsRequired();
+        builder.Property(o => o.ScheduledStartsAt);
+        builder.Property(o => o.ScheduledEndsAt);
+        builder.Property(o => o.TravelBufferMinutes);
         builder.Property(o => o.CreatedAt).IsRequired();
         builder.Property(o => o.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
         builder.Property(o => o.StatusAntesDaEspera).HasConversion<string>().HasMaxLength(32);

@@ -21,19 +21,43 @@ public sealed class TenantResolutionMiddleware(RequestDelegate next, ILogger<Ten
         }
 
         var slug = ExtractSlug(context.Request);
-        if (string.IsNullOrWhiteSpace(slug))
+        var host = context.Request.Host.Host.ToLowerInvariant();
+
+        Tenant? tenant = null;
+        if (!string.IsNullOrWhiteSpace(slug))
+        {
+            tenant = await db
+                .Tenants.AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Slug.Value == slug, context.RequestAborted);
+        }
+
+        if (tenant is null && !string.IsNullOrWhiteSpace(host) && host is not ("localhost" or "127.0.0.1"))
+        {
+            tenant = await db
+                .Tenants.AsNoTracking()
+                .FirstOrDefaultAsync(
+                    t => t.CustomDomain == host && t.CustomDomainStatus == CustomDomainStatus.Ativo,
+                    context.RequestAborted
+                );
+        }
+
+        if (tenant is null)
         {
             context.Response.StatusCode = StatusCodes.Status404NotFound;
             await context.Response.WriteAsJsonAsync(new { type = "TENANT_NAO_ENCONTRADO", title = "Tenant nao encontrado." });
             return;
         }
 
-        var tenant = await db.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug.Value == slug, context.RequestAborted);
-
-        if (tenant is null)
+        // RN-TEN-013 — subdominio com dominio proprio ativo: 301 permanente.
+        if (
+            host.EndsWith(".prata.app", StringComparison.Ordinal)
+            && tenant.CustomDomainStatus == CustomDomainStatus.Ativo
+            && !string.IsNullOrWhiteSpace(tenant.CustomDomain)
+        )
         {
-            context.Response.StatusCode = StatusCodes.Status404NotFound;
-            await context.Response.WriteAsJsonAsync(new { type = "TENANT_NAO_ENCONTRADO", title = "Tenant nao encontrado." });
+            var target = $"https://{tenant.CustomDomain}{context.Request.Path}{context.Request.QueryString}";
+            context.Response.StatusCode = StatusCodes.Status301MovedPermanently;
+            context.Response.Headers.Location = target;
             return;
         }
 
@@ -53,7 +77,7 @@ public sealed class TenantResolutionMiddleware(RequestDelegate next, ILogger<Ten
             tenant.Id.ToString()
         );
 
-        logger.LogDebug("Tenant resolvido {Slug} -> {TenantId}", slug, tenant.Id);
+        logger.LogDebug("Tenant resolvido {Slug} -> {TenantId}", tenant.Slug.Value, tenant.Id);
         await next(context);
     }
 

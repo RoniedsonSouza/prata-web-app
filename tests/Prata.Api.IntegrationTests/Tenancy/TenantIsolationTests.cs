@@ -5,6 +5,7 @@ using Prata.Application.Abstractions;
 using Prata.Domain.Briefing;
 using Prata.Domain.Catalog;
 using Prata.Domain.Common;
+using Prata.Domain.Contracts;
 using Prata.Domain.Delivery;
 using Prata.Domain.Sales;
 using Prata.Domain.Tenancy;
@@ -311,6 +312,61 @@ public sealed class TenantIsolationTests : IAsyncLifetime
         visible.Should().ContainSingle();
         visible[0].TenantId.Should().Be(tenantA);
         vizinho.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RN_TEN_002_tenant_nao_le_contrato_do_vizinho()
+    {
+        Guid tenantA;
+        Guid tenantB;
+        Guid contractB;
+
+        await using (var owner = CreateOwnerContext())
+        {
+            (tenantA, tenantB, contractB) = await SeedTenantsAndContractsAsync(owner);
+        }
+
+        await using var contextA = CreateAppContext(tenantA);
+        await SetTenantGucAsync(contextA, tenantA);
+
+        var visible = await contextA.Contracts.ToListAsync();
+        var vizinho = await contextA.Contracts.FirstOrDefaultAsync(c => c.Id == contractB);
+
+        visible.Should().ContainSingle();
+        visible[0].TenantId.Should().Be(tenantA);
+        vizinho.Should().BeNull();
+    }
+
+    private static async Task<(Guid TenantA, Guid TenantB, Guid ContractB)> SeedTenantsAndContractsAsync(
+        PrataDbContext db
+    )
+    {
+        var agora = DateTimeOffset.UtcNow;
+        var a = Tenant.Create("A", "estudio-a-ctr", agora).Value;
+        var b = Tenant.Create("B", "estudio-b-ctr", agora).Value;
+        db.Tenants.AddRange(a, b);
+        await db.SaveChangesAsync();
+
+        var typeA = ServiceType.Create(a.Id, "studio", "Studio", 1);
+        var typeB = ServiceType.Create(b.Id, "studio", "Studio", 1);
+        db.ServiceTypes.AddRange(typeA, typeB);
+
+        var clientA = Client.Create(a.Id, "Ana", "ana-ctr@a.com", null, PreferredChannel.Email).Value;
+        var clientB = Client.Create(b.Id, "Bruno", "bruno-ctr@b.com", null, PreferredChannel.Email).Value;
+        db.Clients.AddRange(clientA, clientB);
+
+        var data = DateOnly.FromDateTime(agora.UtcDateTime.Date.AddDays(40));
+        var orderA = Order.Create(a.Id, clientA.Id, typeA.Id, data, agora).Value;
+        var orderB = Order.Create(b.Id, clientB.Id, typeB.Id, data, agora).Value;
+        db.Orders.AddRange(orderA, orderB);
+        await db.SaveChangesAsync();
+
+        var clauses = ContractRequiredClauses.All.ToArray();
+        var cA = Contract.Create(a.Id, orderA.Id, "v1", clauses, agora, 7).Value;
+        var cB = Contract.Create(b.Id, orderB.Id, "v1", clauses, agora, 7).Value;
+        db.Contracts.AddRange(cA, cB);
+        await db.SaveChangesAsync();
+        return (a.Id, b.Id, cB.Id);
     }
 
     private static async Task<(Guid TenantA, Guid TenantB)> SeedTenantsAndBriefingAnswersAsync(PrataDbContext db)

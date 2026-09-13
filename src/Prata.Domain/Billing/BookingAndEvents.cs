@@ -2,7 +2,10 @@ using Prata.Domain.Common;
 
 namespace Prata.Domain.Billing;
 
-/// <summary>Reserva minima de data (E3). Sobreposicao garantida por EXCLUDE no banco.</summary>
+/// <summary>
+/// Reserva de data. Sobreposicao garantida por EXCLUDE no banco (RN-AGD-001).
+/// So nasce de pedido Confirmado (RN-AGD-002).
+/// </summary>
 public sealed class Booking : AggregateRoot, ITenantOwned
 {
     private Booking() { }
@@ -29,11 +32,11 @@ public sealed class Booking : AggregateRoot, ITenantOwned
 
     public Guid OrderId { get; }
 
-    public DateTimeOffset StartsAt { get; }
+    public DateTimeOffset StartsAt { get; private set; }
 
-    public DateTimeOffset EndsAt { get; }
+    public DateTimeOffset EndsAt { get; private set; }
 
-    public int TravelBufferMinutes { get; }
+    public int TravelBufferMinutes { get; private set; }
 
     public BookingStatus Status { get; private set; }
 
@@ -42,9 +45,15 @@ public sealed class Booking : AggregateRoot, ITenantOwned
         Guid orderId,
         DateTimeOffset startsAt,
         DateTimeOffset endsAt,
-        int travelBufferMinutes
+        int travelBufferMinutes,
+        bool orderStatusConfirmado = true
     )
     {
+        if (!orderStatusConfirmado)
+            return Error.Validation(
+                "BOOKING_PEDIDO_NAO_CONFIRMADO",
+                "Booking so nasce de pedido Confirmado (RN-AGD-002)."
+            );
         if (endsAt <= startsAt)
             return BillingErrors.IntervaloInvalido;
         if (travelBufferMinutes < 0)
@@ -53,11 +62,43 @@ public sealed class Booking : AggregateRoot, ITenantOwned
         return new Booking(Guid.NewGuid(), tenantId, orderId, startsAt, endsAt, travelBufferMinutes);
     }
 
+    /// <summary>Checagem de dominio; a barreira real e o EXCLUDE no Postgres.</summary>
+    public static bool OverlapsConsideringBuffer(
+        DateTimeOffset aStart,
+        DateTimeOffset aEnd,
+        int aBufferMinutes,
+        DateTimeOffset bStart,
+        DateTimeOffset bEnd,
+        int bBufferMinutes
+    )
+    {
+        var aFrom = aStart.AddMinutes(-aBufferMinutes);
+        var aTo = aEnd.AddMinutes(aBufferMinutes);
+        var bFrom = bStart.AddMinutes(-bBufferMinutes);
+        var bTo = bEnd.AddMinutes(bBufferMinutes);
+        return aFrom < bTo && bFrom < aTo;
+    }
+
     public Result<Unit> Cancelar()
     {
         if (Status != BookingStatus.Ativo)
             return Error.Validation("BOOKING_JA_CANCELADO", "Booking ja cancelado.");
         Status = BookingStatus.Cancelado;
+        return Unit.Value;
+    }
+
+    public Result<Unit> Reagendar(DateTimeOffset startsAt, DateTimeOffset endsAt, int travelBufferMinutes)
+    {
+        if (Status != BookingStatus.Ativo)
+            return Error.Validation("BOOKING_NAO_ATIVO", "So booking Ativo pode ser reagendado.");
+        if (endsAt <= startsAt)
+            return BillingErrors.IntervaloInvalido;
+        if (travelBufferMinutes < 0)
+            return Error.Validation("BOOKING_BUFFER_INVALIDO", "Buffer de deslocamento nao pode ser negativo.");
+
+        StartsAt = startsAt;
+        EndsAt = endsAt;
+        TravelBufferMinutes = travelBufferMinutes;
         return Unit.Value;
     }
 }

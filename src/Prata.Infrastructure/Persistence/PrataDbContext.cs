@@ -5,9 +5,11 @@ using Prata.Domain.Billing;
 using Prata.Domain.Briefing;
 using Prata.Domain.Catalog;
 using Prata.Domain.Common;
+using Prata.Domain.Contracts;
 using Prata.Domain.Delivery;
 using Prata.Domain.Notifications;
 using Prata.Domain.Sales;
+using Prata.Domain.Scheduling;
 using Prata.Domain.Showcase;
 using Prata.Domain.Tenancy;
 using Prata.Infrastructure.Identity;
@@ -75,6 +77,14 @@ public sealed class PrataDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<ReconciliationIssue> ReconciliationIssues => Set<ReconciliationIssue>();
 
     public DbSet<Booking> Bookings => Set<Booking>();
+
+    public DbSet<Availability> Availabilities => Set<Availability>();
+
+    public DbSet<BlackoutDate> BlackoutDates => Set<BlackoutDate>();
+
+    public DbSet<Contract> Contracts => Set<Contract>();
+
+    public DbSet<Signature> Signatures => Set<Signature>();
 
     public DbSet<Gallery> Galleries => Set<Gallery>();
 

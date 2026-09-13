@@ -41,6 +41,11 @@ internal sealed class TenantConfiguration : IEntityTypeConfiguration<Tenant>
         );
         builder.Ignore(t => t.DomainEvents);
         builder.Ignore(t => t.IsPortfolioPublished);
+        builder.Property(t => t.CustomDomain).HasMaxLength(253);
+        builder.Property(t => t.CustomDomainStatus).HasConversion<string>().HasMaxLength(32);
+        builder.Property(t => t.CustomDomainVerifiedAt);
+        builder.Property(t => t.WhatsAppCloudEnabled);
+        builder.HasIndex(t => t.CustomDomain).IsUnique().HasFilter("custom_domain IS NOT NULL");
     }
 }
 

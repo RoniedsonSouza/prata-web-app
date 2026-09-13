@@ -97,4 +97,7 @@ public static class NotificationTypes
     public const string OrcamentoEnviado = "orcamento_enviado";
     public const string OrcamentoExpirando = "orcamento_expirando";
     public const string OrcamentoAprovado = "orcamento_aprovado";
+    public const string LembreteAssinatura = "lembrete_assinatura";
+    public const string LembreteSaldo = "lembrete_saldo";
+    public const string LembreteEvento = "lembrete_evento";
 }

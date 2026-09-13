@@ -42,6 +42,7 @@ Prefixos: `TEN` identidade · `CAT` catálogo · `VIT` vitrine · `COM` comercia
 | `RN-TEN-010` | Senha tem no mínimo 10 caracteres; 5 tentativas falhas bloqueiam a conta por 15 minutos | Teste de política e de lockout |
 | `RN-TEN-011` | Token JWT carrega `tenant_id` e `role`. Requisição cujo `tenant_id` do token difere do tenant resolvido pelo host é rejeitada com `403` | Token do tenant A em host do tenant B retorna `403` |
 | `RN-TEN-012` | A API valida no boot que está conectada com papel `NOBYPASSRLS` e **se recusa a subir** se estiver como dono das tabelas | Subir a API com a string de migration falha o health check de inicialização |
+| `RN-TEN-013` | Domínio próprio (CNAME) é opcional por tenant: após verificação, o subdomínio `{slug}.prata.app` responde com `301` permanente para o domínio, e o subdomínio continua resolvendo indefinidamente | Ativar domínio e bater no subdomínio; resposta `301` com `Location` do domínio próprio |
 
 ## CAT · Catálogo de serviços e pacotes
 
@@ -177,8 +178,10 @@ Prefixos: `TEN` identidade · `CAT` catálogo · `VIT` vitrine · `COM` comercia
 | `RN-NOT-001` | Notificação é idempotente por `(tenant, destinatário, tipo, chave de origem)`. Job que roda duas vezes não envia dois e-mails | Executar o job duas vezes gera um envio |
 | `RN-NOT-002` | Nenhuma notificação carrega resposta sensível de briefing no corpo, assunto ou anexo — apenas link autenticado | Teste de conteúdo do e-mail afirma ausência do dado sensível |
 | `RN-NOT-003` | Toda tentativa de envio registra canal, destinatário, resultado e erro. Falha de envio não desfaz a transação de negócio | Simular falha de SMTP: o pedido segue confirmado e a notificação fica com falha registrada |
-| `RN-NOT-010` | Na v1 o WhatsApp é link `wa.me` pré-preenchido, gerado no back-office e disparado por ação humana. Nenhum envio automático por WhatsApp | Não existe caminho de código que envie WhatsApp sem ação do usuário |
+| `RN-NOT-010` | Na v1 o WhatsApp é link `wa.me` pré-preenchido, gerado no back-office e disparado por ação humana. Nenhum envio automático por WhatsApp **enquanto Cloud API estiver desligada** | Não existe caminho de código que envie WhatsApp sem ação do usuário quando o opt-in está off |
 | `RN-NOT-011` | E-mail transacional tem remetente do tenant no `From` amigável e domínio da plataforma no envelope, para não quebrar SPF/DKIM | Cabeçalho do e-mail verificado em teste de integração |
+| `RN-NOT-012` | Cloud API do WhatsApp é **opt-in por tenant**. Sem opt-in, vale `RN-NOT-010`. Com opt-in, templates de lembrete podem sair pela API do WABA do fotógrafo | Tenant sem flag não chama Cloud API; com flag, o port `IWhatsAppCloudSender` é usado |
+| `RN-NOT-020` | Job de lembrete de saldo cobra em 1, 3 e 7 dias antes do vencimento, com idempotência por `(tenant, destinatário, tipo, chave)` e no máximo 3 lembretes por pendência | Rodar o job nos três marcos gera três envios; repetir no mesmo dia não duplica |
 
 ## AUD · Auditoria
 

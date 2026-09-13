@@ -926,6 +926,215 @@ namespace Prata.Infrastructure.Persistence.Migrations
                     b.ToTable("service_type", (string)null);
                 });
 
+            modelBuilder.Entity("Prata.Domain.Contracts.Contract", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("_clauseCodes")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("clause_codes");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<string>("PdfSha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("pdf_sha256");
+
+                    b.Property<string>("PdfStorageKey")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("pdf_storage_key");
+
+                    b.Property<Guid?>("ReplacesContractId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("replaces_contract_id");
+
+                    b.Property<DateTimeOffset?>("SentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at");
+
+                    b.Property<DateTimeOffset?>("SignedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("signed_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TemplateVersion")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("template_version");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset?>("ViewedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("viewed_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_contract");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_contract_tenant_id");
+
+                    b.HasIndex("TenantId", "OrderId")
+                        .HasDatabaseName("ix_contract_tenant_id_order_id");
+
+                    b.ToTable("contract", (string)null);
+                });
+
+            modelBuilder.Entity("Prata.Domain.Contracts.Signature", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ContractId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("contract_id");
+
+                    b.Property<string>("Ip")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("ip");
+
+                    b.Property<string>("PdfSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("pdf_sha256");
+
+                    b.Property<DateTimeOffset>("SignedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("signed_at");
+
+                    b.Property<string>("SignerEmail")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("signer_email");
+
+                    b.Property<string>("SignerName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("signer_name");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("UserAgent")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("user_agent");
+
+                    b.HasKey("Id")
+                        .HasName("pk_signature");
+
+                    b.HasIndex("ContractId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_signature_contract_id");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_signature_tenant_id");
+
+                    b.ToTable("signature", (string)null);
+                });
+
+            modelBuilder.Entity("Prata.Domain.Scheduling.Availability", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<TimeOnly>("EndsAtTime")
+                        .HasColumnType("time")
+                        .HasColumnName("ends_at_time");
+
+                    b.Property<TimeOnly>("StartsAtTime")
+                        .HasColumnType("time")
+                        .HasColumnName("starts_at_time");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("Weekday")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("weekday");
+
+                    b.HasKey("Id")
+                        .HasName("pk_availability");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_availability_tenant_id");
+
+                    b.HasIndex("TenantId", "Weekday")
+                        .HasDatabaseName("ix_availability_tenant_id_weekday");
+
+                    b.ToTable("availability", (string)null);
+                });
+
+            modelBuilder.Entity("Prata.Domain.Scheduling.BlackoutDate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("reason");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_blackout_date");
+
+                    b.HasIndex("TenantId", "Date")
+                        .IsUnique()
+                        .HasDatabaseName("ix_blackout_date_tenant_id_date");
+
+                    b.ToTable("blackout_date", (string)null);
+                });
+
             modelBuilder.Entity("Prata.Domain.Delivery.DownloadJob", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1354,6 +1563,14 @@ namespace Prata.Infrastructure.Persistence.Migrations
                         .HasColumnType("date")
                         .HasColumnName("intended_date");
 
+                    b.Property<DateTimeOffset?>("ScheduledEndsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("scheduled_ends_at");
+
+                    b.Property<DateTimeOffset?>("ScheduledStartsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("scheduled_starts_at");
+
                     b.Property<string>("RefusalReason")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)")
@@ -1381,6 +1598,10 @@ namespace Prata.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
+
+                    b.Property<int?>("TravelBufferMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("travel_buffer_minutes");
 
                     b.Property<decimal>("Total")
                         .HasColumnType("numeric(14,2)")
@@ -1722,6 +1943,21 @@ namespace Prata.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("CustomDomain")
+                        .HasMaxLength(253)
+                        .HasColumnType("character varying(253)")
+                        .HasColumnName("custom_domain");
+
+                    b.Property<string>("CustomDomainStatus")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("custom_domain_status");
+
+                    b.Property<DateTimeOffset?>("CustomDomainVerifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("custom_domain_verified_at");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -1738,8 +1974,17 @@ namespace Prata.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(32)")
                         .HasColumnName("status");
 
+                    b.Property<bool>("WhatsAppCloudEnabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("whats_app_cloud_enabled");
+
                     b.HasKey("Id")
                         .HasName("pk_tenant");
+
+                    b.HasIndex("CustomDomain")
+                        .IsUnique()
+                        .HasDatabaseName("ix_tenant_custom_domain")
+                        .HasFilter("custom_domain IS NOT NULL");
 
                     b.ToTable("tenant", (string)null);
                 });
@@ -2147,6 +2392,17 @@ namespace Prata.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_briefing_question_briefing_template_template_id");
+                });
+
+            modelBuilder.Entity("Prata.Domain.Contracts.Contract", b =>
+                {
+                    b.HasOne("Prata.Domain.Contracts.Signature", "Signature")
+                        .WithOne()
+                        .HasForeignKey("Prata.Domain.Contracts.Signature", "ContractId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_signature_contract_contract_id");
+
+                    b.Navigation("Signature");
                 });
 
             modelBuilder.Entity("Prata.Domain.Delivery.Photo", b =>

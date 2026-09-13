@@ -130,6 +130,7 @@ try
     app.MapBriefingEndpoints();
     app.MapBillingEndpoints();
     app.MapDeliveryEndpoints();
+    app.MapAgendaAndContractEndpoints();
     app.MapTemplateEditorEndpoints();
     app.MapPublicPortfolioEndpoints();
     app.MapPlatformAuthEndpoints();

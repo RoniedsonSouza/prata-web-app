@@ -49,6 +49,13 @@ public sealed class Order : AggregateRoot, ITenantOwned
 
     public DateOnly IntendedDate { get; private set; }
 
+    /// <summary>Janela logistica fechada em Agendar (E5). Null ate Agendado.</summary>
+    public DateTimeOffset? ScheduledStartsAt { get; private set; }
+
+    public DateTimeOffset? ScheduledEndsAt { get; private set; }
+
+    public int? TravelBufferMinutes { get; private set; }
+
     public DateTimeOffset CreatedAt { get; }
 
     public OrderStatus Status { get; private set; }
@@ -336,12 +343,59 @@ public sealed class Order : AggregateRoot, ITenantOwned
     }
 
     /// <summary>
-    /// Confirmado → Realizado (atalho E3→E5 enquanto nao ha Agenda).
-    /// Exige agora ≥ data pretendida do evento.
+    /// Confirmado → Agendado: detalhe logistico (horario, buffer, equipe) — E5.
+    /// </summary>
+    public Result<Unit> Agendar(DateTimeOffset scheduledStartsAt, DateTimeOffset scheduledEndsAt, int travelBufferMinutes)
+    {
+        if (Status != OrderStatus.Confirmado)
+            return SalesErrors.TransicaoInvalida(Status, nameof(OrderStatus.Agendado));
+        if (scheduledEndsAt <= scheduledStartsAt)
+            return Error.Validation("PEDIDO_AGENDA_INTERVALO", "Fim do agendamento deve ser apos o inicio.");
+        if (travelBufferMinutes < 0)
+            return Error.Validation("PEDIDO_AGENDA_BUFFER", "Buffer de deslocamento nao pode ser negativo.");
+
+        ScheduledStartsAt = scheduledStartsAt;
+        ScheduledEndsAt = scheduledEndsAt;
+        TravelBufferMinutes = travelBufferMinutes;
+        Status = OrderStatus.Agendado;
+        Raise(new AgendamentoDetalhado(TenantId, Id, scheduledStartsAt, scheduledEndsAt, travelBufferMinutes));
+        return Unit.Value;
+    }
+
+    /// <summary>Confirmado|Agendado → Reagendado; libera e reserva nova data na aplicacao.</summary>
+    public Result<Unit> Reagendar(DateOnly novaDataPretendida, DateTimeOffset agora)
+    {
+        if (Status is not (OrderStatus.Confirmado or OrderStatus.Agendado))
+            return SalesErrors.TransicaoInvalida(Status, nameof(OrderStatus.Reagendado));
+        if (novaDataPretendida < DateOnly.FromDateTime(agora.UtcDateTime.Date))
+            return SalesErrors.PedidoDataPassado;
+
+        IntendedDate = novaDataPretendida;
+        ScheduledStartsAt = null;
+        ScheduledEndsAt = null;
+        TravelBufferMinutes = null;
+        Status = OrderStatus.Reagendado;
+        Raise(new PedidoReagendado(TenantId, Id, novaDataPretendida));
+        return Unit.Value;
+    }
+
+    /// <summary>Reagendado → Confirmado quando a nova data e aceita (sistema).</summary>
+    public Result<Unit> ReconfirmarAposReagendamento()
+    {
+        if (Status != OrderStatus.Reagendado)
+            return SalesErrors.TransicaoInvalida(Status, nameof(OrderStatus.Confirmado));
+
+        Status = OrderStatus.Confirmado;
+        Raise(new PedidoConfirmado(TenantId, Id));
+        return Unit.Value;
+    }
+
+    /// <summary>
+    /// Confirmado|Agendado → Realizado. Exige agora ≥ data pretendida do evento.
     /// </summary>
     public Result<Unit> MarcarRealizado(DateTimeOffset agora)
     {
-        if (Status != OrderStatus.Confirmado)
+        if (Status is not (OrderStatus.Confirmado or OrderStatus.Agendado))
             return SalesErrors.TransicaoInvalida(Status, nameof(OrderStatus.Realizado));
 
         var hoje = DateOnly.FromDateTime(agora.UtcDateTime.Date);

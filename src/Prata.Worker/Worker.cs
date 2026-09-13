@@ -9,6 +9,7 @@ public sealed class Worker(IServiceScopeFactory scopeFactory, ILogger<Worker> lo
     private DateOnly? _lastSensitivePurgeDay;
     private DateOnly? _lastReconcileDay;
     private DateOnly? _lastGalleryExpirationDay;
+    private DateOnly? _lastReminderDay;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -63,6 +64,15 @@ public sealed class Worker(IServiceScopeFactory scopeFactory, ILogger<Worker> lo
                     _lastGalleryExpirationDay = today;
                     if (n > 0)
                         logger.LogInformation("Expirou {Count} galerias", n);
+                }
+
+                if (_lastReminderDay != today)
+                {
+                    var reminders = scope.ServiceProvider.GetRequiredService<IReminderProcessor>();
+                    var n = await reminders.ProcessAsync(stoppingToken);
+                    _lastReminderDay = today;
+                    if (n > 0)
+                        logger.LogInformation("Enviou {Count} lembretes", n);
                 }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

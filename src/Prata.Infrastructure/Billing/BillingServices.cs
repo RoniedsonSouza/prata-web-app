@@ -130,9 +130,20 @@ public sealed class OrderConfirmationService(IOrderRepository orders, IDateTimeP
             .FirstOrDefaultAsync(p => p.TenantId == tenantId && p.OrderId == order.Id, cancellationToken);
 
         var sinalOk = payment?.SinalConfirmado == true;
-        var result = order.Confirmar(sinalOk, contratoAssinado, clock.UtcNow);
+        var contratoOk =
+            contratoAssinado
+            || await db.Contracts.AnyAsync(
+                c => c.TenantId == tenantId && c.OrderId == order.Id && c.Status == Domain.Contracts.ContractStatus.Assinado,
+                cancellationToken
+            );
+        var result = order.Confirmar(sinalOk, contratoOk, clock.UtcNow);
         if (result.IsFailure)
             return result;
+
+        var day = order.IntendedDate;
+        var blocked = await db.BlackoutDates.AnyAsync(b => b.TenantId == tenantId && b.Date == day, cancellationToken);
+        if (blocked)
+            return Error.Validation("BOOKING_DATA_BLOQUEADA", "Data bloqueada por BlackoutDate (RN-AGD-010).");
 
         var existingBooking = await db.Bookings.AnyAsync(
             b => b.TenantId == tenantId && b.OrderId == order.Id && b.Status == BookingStatus.Ativo,
@@ -147,7 +158,8 @@ public sealed class OrderConfirmationService(IOrderRepository orders, IDateTimeP
                 order.Id,
                 new DateTimeOffset(start, TimeSpan.Zero),
                 new DateTimeOffset(ends, TimeSpan.Zero),
-                travelBufferMinutes: 30
+                travelBufferMinutes: 30,
+                orderStatusConfirmado: true
             );
             if (booking.IsFailure)
                 return Result.Failure<Unit>(booking.Error!.Value);

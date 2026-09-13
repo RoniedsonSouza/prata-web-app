@@ -30,4 +30,14 @@ public sealed record PedidoCancelado(Guid TenantId, Guid OrderId, string Motivo,
 
 public sealed record PedidoConfirmado(Guid TenantId, Guid OrderId) : DomainEvent;
 
+public sealed record AgendamentoDetalhado(
+    Guid TenantId,
+    Guid OrderId,
+    DateTimeOffset StartsAt,
+    DateTimeOffset EndsAt,
+    int TravelBufferMinutes
+) : DomainEvent;
+
+public sealed record PedidoReagendado(Guid TenantId, Guid OrderId, DateOnly NovaData) : DomainEvent;
+
 public sealed record PedidoRealizado(Guid TenantId, Guid OrderId) : DomainEvent;
