@@ -44,26 +44,35 @@ porque o código existe.
 
 Decisões e alternativas recusadas: [docs/adr](docs/adr/README.md).
 
-## Começar
+## Dev local (rápido)
+
+**Antes do 1º start:** copie `.env.example` → `.env`, suba as deps, papéis do
+banco (`db-roles.sql`) e migrations — tudo em
+[docs/14 · Ambientes e operação](docs/14-AMBIENTES-E-OPERACAO.md).
+
+Asaas **não** é obrigatório no dia 1: sem chaves reais a API usa
+`FakePaymentGateway`. PSP real: [docs/ops/ASAAS-SETUP.md](docs/ops/ASAAS-SETUP.md).
 
 ```bash
-# dependências (Postgres, Redis, MinIO, Mailpit, Seq)
+# deps (Postgres, Redis, MinIO, Mailpit, Seq)
 docker compose up -d --wait api-deps
 
-# papéis do banco — sem isso a API se recusa a subir (RN-TEN-012)
-docker compose exec -T postgres psql -U prata_owner -d prata < scripts/db-roles.sql
+# API + Worker (terminais separados)
+dotnet watch --project src/Prata.Api
+dotnet watch --project src/Prata.Worker
 
-# configuração
-cp .env.example .env      # e preencher os CHANGE_ME
-
-# ferramentas .NET
-dotnet tool restore
+# Front
+cd web && npm install && npm run dev
 ```
 
-Passo a passo completo, portas, wildcard e checklist de publicação:
-[docs/14 · Ambientes e operação](docs/14-AMBIENTES-E-OPERACAO.md) ·
-[docs/deploy-e1.md](docs/deploy-e1.md).
-Configurar o PSP: [docs/ops/ASAAS-SETUP.md](docs/ops/ASAAS-SETUP.md).
+| Serviço | URL |
+|---|---|
+| API | http://localhost:5080 · OpenAPI em `/scalar` |
+| Front | http://prata.localhost:3000 |
+| Tenant demo | http://estudio-demo.prata.localhost:3000 |
+
+Publicação / DNS: [docs/deploy-e1.md](docs/deploy-e1.md).
+Portas extras (Mailpit, Seq, MinIO) e wildcard `*.localhost`: [docs/14](docs/14-AMBIENTES-E-OPERACAO.md).
 
 > A porta 5432 pode já estar ocupada por um Postgres local. Todas as portas do
 > compose são configuráveis: `POSTGRES_PORT=5433 docker compose up -d`.
