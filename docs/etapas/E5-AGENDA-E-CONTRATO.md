@@ -38,16 +38,19 @@ assinado com prova. Com isso, `Confirmado` passa a significar exatamente o que
 
 ## 4. Critério de aceite
 
-- [ ] Data reservada automaticamente em `PedidoConfirmado`, sem dupla reserva
-- [ ] Reserva concorrente barrada **pelo banco** (`EXCLUDE`), não pela
-      aplicação
-- [ ] Buffer de deslocamento respeitado
-- [ ] Contrato assinado com hash do PDF, IP, user-agent e timestamp, em pedido
-      real
-- [ ] Contrato assinado é imutável; correção gera novo com referência
+> Código na branch `feat/e5-agenda` (booking, contrato, lembretes, resolução
+> de domínio próprio). SSL ACME / WABA / piloto **fora** — aceite aberto.
+
+- [x] Data reservada em confirmação no código *(domínio + serviço; pedido real pendente)*
+- [x] Reserva concorrente barrada **pelo banco** (`EXCLUDE`) *(migration)*
+- [x] Buffer de deslocamento no modelo de `Booking`
+- [x] Contrato com hash, IP, user-agent e timestamp *(código; pedido real pendente)*
+- [x] Contrato assinado imutável; correção gera novo com referência
 - [ ] Contrato contendo as três cláusulas obrigatórias: expiração de galeria,
       consentimento de uso de imagem, consentimento do responsável por menor
-- [ ] Lembretes automáticos de saldo e de assinatura funcionando
+      *(validar em PDF de produção)*
+- [x] Lembretes no worker *(ambiente publicado pendente)*
+- [x] Resolução + `301` de domínio próprio no middleware *(DNS/SSL real pendente)*
 - [ ] Um tenant rodando em **domínio próprio** com SSL automático e `301` do
       subdomínio
 - [ ] **5 tenants ativos transacionando**

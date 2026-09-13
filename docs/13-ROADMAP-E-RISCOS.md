@@ -41,32 +41,40 @@ Isso não é um cronograma: é a ordem de grandeza que impede a decisão errada 
 
 ## 2. Critério de aceite por etapa
 
+> **Estado (set/2026):** implementação de código E1–E5 na branch
+> `feat/e5-agenda`. Itens abaixo de **piloto / produção / dinheiro real**
+> permanecem abertos — código não substitui aceite.
+
 Uma etapa não termina porque o código compila. Termina quando isto é verdade:
 
 ### E1
+- [x] Código: tenant, auth, RLS, resolução por slug/subdomínio *(branch)*
+- [x] `TenantIsolationTests` passando contra Postgres real *(CI / Testcontainers)*
+- [x] A API se recusa a subir se conectar como dono das tabelas ([RN-TEN-012](06-REGRAS-DE-NEGOCIO.md))
 - [ ] Um tenant real publicado em `{slug}.prata.app`, com portfólio dele
-- [ ] `TenantIsolationTests` passando contra Postgres real
-- [ ] A API se recusa a subir se conectar como dono das tabelas ([RN-TEN-012](06-REGRAS-DE-NEGOCIO.md))
 - [ ] Lighthouse CI verde na rota pública: LCP ≤ 2,0 s, CLS ≤ 0,05, SEO 100
 - [ ] Conta no PSP aberta e **habilitação de split solicitada**
 - [ ] O fotógrafo piloto trocou o link da bio do Instagram para o novo site
 
-O último item é o que prova a etapa. Os outros são pré-requisito dele.
+O último item é o que prova a etapa. Os outros de produção são pré-requisito dele.
 
 ### E2
-- [ ] Pedido entra pelo portal, com briefing condicional por tipo de serviço
+- [x] Código: pedido, briefing, ficha de direção *(branch)*
+- [ ] Pedido entra pelo portal, com briefing condicional por tipo de serviço *(piloto)*
 - [ ] Ficha de direção em PDF, uma página, gerada e usada num evento real
 - [ ] Nenhuma resposta sensível aparece em log — teste de log passando
 - [ ] O fotógrafo piloto parou de coletar briefing por WhatsApp
 
 ### E3
+- [x] Código: `IPaymentGateway` + Fake + `AsaasPaymentGateway`, webhook, split, conciliação *(branch; Asaas HTTP só com chaves reais)*
 - [ ] Sinal cobrado com split, liquidado e **repassado** em produção
-- [ ] Webhook idempotente comprovado: mesmo evento 3× → uma transição
+- [ ] Webhook idempotente comprovado: mesmo evento 3× → uma transição *(sandbox/produção)*
 - [ ] Conciliação diária rodando, com divergência semeada sendo detectada
 - [ ] KYC pendente visível no back-office do fotógrafo
 - [ ] **Primeira comissão recebida na conta da plataforma**
 
 ### E4
+- [x] Código: upload, derivadas, galeria, seleção, ZIP *(branch)*
 - [ ] Galeria de casamento real entregue: 800 fotos, upload direto, derivadas
 - [ ] `BloqueadaPorPendencia` funcionando: saldo pago destrava a alta resolução
 - [ ] ZIP de 20 GB montado em background sem timeout
@@ -74,9 +82,10 @@ O último item é o que prova a etapa. Os outros são pré-requisito dele.
 - [ ] Custo de storage do mês conferido contra a estimativa de [09](09-GALERIAS-E-ENTREGA.md)
 
 ### E5
-- [ ] Data reservada automaticamente na confirmação, sem dupla reserva
+- [x] Código: booking, contrato, lembretes, domínio próprio (modelo + resolução) *(branch)*
+- [ ] Data reservada automaticamente na confirmação, sem dupla reserva *(pedido real)*
 - [ ] Contrato assinado com hash, IP e timestamp, em pedido real
-- [ ] Lembretes automáticos de saldo e de assinatura funcionando
+- [ ] Lembretes automáticos de saldo e de assinatura funcionando *(ambiente publicado)*
 - [ ] 5 tenants ativos transacionando
 
 ## 3. Riscos

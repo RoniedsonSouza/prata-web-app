@@ -15,18 +15,20 @@ um ensaio não é técnica, é a pessoa não ter gostado de si mesma na foto.
 
 ## Estado atual
 
-**Só documentação.** Nenhuma linha de aplicação foi escrita — de propósito.
+**Código E1–E5 na branch `feat/e5-agenda`.** Aceite de piloto/produção
+**ainda aberto** (DNS wildcard, conta Asaas marketplace, fotógrafo piloto).
 
 | | |
 |---|---|
-| ✅ | regras de negócio, arquitetura, decisões, modelo de dados, roadmap |
-| ✅ | configuração de build, CI, ambiente local, orçamento de performance |
-| ⬜ | código: começa na [E1 · Fundação](docs/etapas/E1-FUNDACAO.md) |
+| ✅ | regras de negócio, arquitetura, ADRs, modelo de dados, roadmap |
+| ✅ | `src/`, `tests/`, `web/` — API, domínio, workers e front na branch |
+| ✅ | FakePaymentGateway em dev/testes; `AsaasPaymentGateway` quando configurado |
+| ⬜ | Deploy real (`*.prata.app`), habilitação marketplace Asaas, aceite piloto |
 
-Antes de escrever a primeira linha, leia
-[docs/README.md](docs/README.md) e a
-[E1](docs/etapas/E1-FUNDACAO.md) — a E1 abre com **três tarefas que não são de
-programação** e que travam etapas futuras se ficarem para depois.
+Antes de contribuir, leia [docs/README.md](docs/README.md) e a etapa em
+[docs/etapas/](docs/etapas/). Critérios de aceite de produção continuam em
+[13 · Roadmap](docs/13-ROADMAP-E-RISCOS.md) — **não** marcar como feitos só
+porque o código existe.
 
 ## Stack
 
@@ -58,8 +60,9 @@ cp .env.example .env      # e preencher os CHANGE_ME
 dotnet tool restore
 ```
 
-Passo a passo completo, portas e URLs locais:
-[docs/14 · Ambientes e operação](docs/14-AMBIENTES-E-OPERACAO.md).
+Passo a passo completo, portas, wildcard e checklist de publicação:
+[docs/14 · Ambientes e operação](docs/14-AMBIENTES-E-OPERACAO.md) ·
+[docs/deploy-e1.md](docs/deploy-e1.md).
 
 > A porta 5432 pode já estar ocupada por um Postgres local. Todas as portas do
 > compose são configuráveis: `POSTGRES_PORT=5433 docker compose up -d`.
@@ -67,35 +70,37 @@ Passo a passo completo, portas e URLs locais:
 ## Verificar
 
 ```bash
-./scripts/check-docs.sh   # link quebrado, RN citada sem definição, ADR inexistente, segredo vazado
+./scripts/check-docs.sh
+dotnet csharpier check .
+dotnet build
+dotnet test
+cd web && npm run typecheck && npm run size
 ```
-
-O mesmo script roda no CI. Quando houver código, o CI acrescenta build,
-testes, **gate de isolamento entre tenants**, orçamento de bundle e
-Lighthouse.
 
 ## Estrutura
 
 ```
 prata/
-├── docs/                 17 documentos de referência + 10 ADRs + 5 etapas
+├── docs/                 referência + ADRs + etapas
 ├── scripts/              check-docs.sh · db-roles.sql
 ├── .github/              CI + orçamento de performance
 ├── Directory.*.props     build e versões centralizadas
 ├── docker-compose.yml    ambiente local
-└── src/ tests/ web/      ← ainda não existem. Criados na E1
+├── src/                  Api · Application · Domain · Infrastructure · Worker
+├── tests/                Domain · Application · Api.IntegrationTests
+└── web/                  Next.js (público, portal, studio)
 ```
 
 ## Documentação
 
 Índice completo em **[docs/README.md](docs/README.md)**. Os quatro que mais
-importam antes de codar:
+importam:
 
 | | |
 |---|---|
 | [00 · Visão e escopo](docs/00-VISAO-E-ESCOPO.md) | o produto, os atores e **o que ele não é** |
 | [03 · Multi-tenancy](docs/03-MULTI-TENANCY.md) | o único risco crítico do produto |
-| [06 · Regras de negócio](docs/06-REGRAS-DE-NEGOCIO.md) | 123 regras numeradas e testáveis |
+| [06 · Regras de negócio](docs/06-REGRAS-DE-NEGOCIO.md) | regras numeradas e testáveis |
 | [13 · Roadmap e riscos](docs/13-ROADMAP-E-RISCOS.md) | E1–E5, critérios de aceite, decisões abertas |
 
 E [CLAUDE.md](CLAUDE.md) — as regras de construção que valem em todo commit.

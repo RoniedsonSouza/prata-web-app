@@ -70,19 +70,21 @@ Webhook do PSP em desenvolvimento precisa de túnel:
 
 ```bash
 cloudflared tunnel --url http://localhost:5080
-# aponte a URL gerada + /v1/webhooks/psp no painel do Asaas sandbox
+# aponte a URL gerada + /v1/webhooks/asaas no painel do Asaas sandbox
+# header asaas-access-token = Payments__Asaas__WebhookSecret
 ```
 
 ## 3. Deploy
 
 | Componente | Alvo | Nota |
 |---|---|---|
-| Front | Vercel | ISR e `next/image` funcionam sem configuração. Wildcard `*.prata.app` no projeto |
+| Front | Vercel | ISR e `next/image` funcionam sem configuração. Wildcard `*.prata.app` no projeto — ver [deploy-e1.md](deploy-e1.md) |
 | API | Fly.io ou Azure Container Apps | contêiner, escala a zero fora de horário na fase inicial |
 | Worker | mesmo contêiner da API, processo separado | Hangfire com dashboard restrito a `platform.admin` |
 | Banco | Neon (branch por PR) ou RDS | Neon simplifica o preview; RDS ganha em previsibilidade de custo em escala |
 | Storage | Cloudflare R2 + CDN | bucket privado, acesso só por URL assinada |
 | Redis | Upstash ou Redis gerenciado | `maxmemory-policy noeviction` obrigatório |
+| PSP | Asaas | `Payments__Provider=Asaas` + chaves; Fake se `CHANGE_ME`. Webhook `/v1/webhooks/asaas` |
 
 ### Ordem de deploy
 

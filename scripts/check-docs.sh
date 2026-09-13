@@ -48,7 +48,11 @@ while IFS= read -r -d '' file; do
            ' "$file" 2>/dev/null \
            | grep -oE '\]\([^)]+\)' \
            | sed -E 's/^\]\(//; s/\)$//')
-done < <(find . -name '*.md' -type f -not -path './node_modules/*' -not -path './.git/*' -print0)
+done < <(find . -name '*.md' -type f \
+  -not -path './node_modules/*' \
+  -not -path '*/node_modules/*' \
+  -not -path './.git/*' \
+  -print0)
 
 [ "$quebrados" -eq 0 ] && ok "$verificados links locais, todos resolvem"
 

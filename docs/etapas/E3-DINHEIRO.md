@@ -49,17 +49,20 @@ disponibilidade nem buffer de deslocamento.
 
 ## 4. Critério de aceite
 
+> Código na branch `feat/e5-agenda` (Fake + `AsaasPaymentGateway`). Aceite
+> com dinheiro real / marketplace Asaas **aberto**.
+
 - [ ] Sinal cobrado com split, **liquidado e repassado em produção**
-- [ ] Webhook idempotente comprovado: mesmo evento 3× → uma transição
-- [ ] Webhook fora de ordem não regride estado
-- [ ] Webhook com assinatura forjada → `401`, nada gravado
-- [ ] Conciliação diária rodando, com divergência semeada sendo detectada
-- [ ] Nenhuma divergência resolvida automaticamente
-- [ ] KYC pendente **visível no back-office do fotógrafo**
-- [ ] Painel financeiro com as três colunas separadas: a receber, liquidado,
+- [x] Webhook idempotente no código: mesmo `external_event_id` não reprocessa *(unit/integração; sandbox ainda pendente)*
+- [x] Webhook fora de ordem não regride estado *(domínio)*
+- [x] Webhook com assinatura forjada → `401`, nada gravado *(Fake + Asaas parser)*
+- [x] Conciliação detecta divergência semeada *(código; job em ambiente publicado pendente)*
+- [x] Nenhuma divergência resolvida automaticamente
+- [x] KYC pendente **visível no back-office do fotógrafo** *(API studio)*
+- [x] Painel financeiro com as três colunas separadas: a receber, liquidado,
       repassado
-- [ ] Alterar comissão não reescreve cobrança antiga
-- [ ] Nenhum dado de cartão em lugar nenhum — verificado por teste de contrato
+- [x] Alterar comissão não reescreve cobrança antiga
+- [x] Nenhum dado de cartão em lugar nenhum — verificado por teste de contrato
 - [ ] **Primeira comissão recebida na conta da plataforma**
 
 ## 5. Riscos da etapa

@@ -45,6 +45,8 @@ que pode ser cortada sem afetar o funcionamento do produto.
 
 ## 4. Critério de aceite
 
+> Código na branch `feat/e5-agenda`. Aceite com casamento/piloto real **aberto**.
+
 - [ ] Galeria de casamento real entregue: ~800 fotos, upload direto, derivadas
       completas
 - [ ] Upload de 20 GB retomando após queda de conexão

@@ -257,6 +257,8 @@ desses, a decisão de arquitetura mudou e precisa de ADR.
 | Item | Como |
 |---|---|
 | Ambiente | `api-sandbox.asaas.com` na E3 inteira. Produção só com conciliação verde |
+| Adapter | `AsaasPaymentGateway` em `Infrastructure/Payments/` quando `Payments:Provider=Asaas` + chaves; senão `FakePaymentGateway` |
+| Webhook | `POST /v1/webhooks/asaas` · header `asaas-access-token` |
 | Webhook local | túnel (`cloudflared` / `ngrok`) apontando para a API local |
 | Teste de integração | adapter do PSP com HTTP falso, **mais** um conjunto de payloads reais de webhook salvos como fixture |
 | Payloads a cobrir | confirmação, liquidação, reenvio duplicado, chegada fora de ordem, estorno, chargeback, KYC aprovado, KYC reprovado |

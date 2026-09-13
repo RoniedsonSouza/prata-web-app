@@ -166,9 +166,11 @@ npx create-next-app@latest web --typescript --tailwind --app --no-src-dir
 
 ## 4. Critério de aceite
 
+> Código na branch `feat/e5-agenda`. Itens de piloto/produção abertos.
+
 - [ ] Um tenant real publicado em `{slug}.prata.app` com o portfólio dele
-- [ ] `TenantIsolationTests` passando contra Postgres real
-- [ ] A API se recusa a subir se conectar como dono das tabelas
+- [x] `TenantIsolationTests` passando contra Postgres real *(Testcontainers)*
+- [x] A API se recusa a subir se conectar como dono das tabelas
 - [ ] Lighthouse CI verde: LCP ≤ 2,0 s · CLS ≤ 0,05 · SEO 100 · a11y ≥ 95
 - [ ] `size-limit` verde: rota pública ≤ 120 kB gzip
 - [ ] Conta no PSP aberta e **habilitação de split solicitada**

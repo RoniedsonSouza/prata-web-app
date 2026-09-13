@@ -135,6 +135,8 @@ na base desde o primeiro briefing.
 
 ## 3. Critério de aceite
 
+> Código na branch `feat/e5-agenda`. Aceite com piloto real **aberto**.
+
 - [ ] Pedido entra pelo portal, com briefing condicional por tipo de serviço
 - [ ] Briefing de casamento respondido do início ao fim em celular real
 - [ ] Ficha de direção gerada e **usada num evento real** pelo piloto

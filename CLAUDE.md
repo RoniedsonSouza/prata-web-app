@@ -3,10 +3,11 @@
 Regras que valem em **todo** commit deste repositório, para pessoa ou agente.
 São curtas de propósito: o detalhe está em `docs/`, e este arquivo aponta.
 
-> **Contexto do repositório hoje:** só documentação. `src/`, `tests/` e `web/`
-> ainda não existem — são criados na [E1](docs/etapas/E1-FUNDACAO.md).
+> **Contexto do repositório hoje:** código E1–E5 na branch `feat/e5-agenda`
+> (`src/`, `tests/`, `web/`). Aceite de piloto/produção continua aberto.
+> Não invente feature fora da etapa atual; leia `docs/etapas/` antes.
 > Não crie página, componente ou entidade sem que a etapa correspondente tenha
-> começado.
+> começado (ou esteja em andamento nesta branch).
 
 ---
 

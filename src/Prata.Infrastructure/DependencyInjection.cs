@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 using OpenTelemetry.Resources;
@@ -41,7 +42,7 @@ public static class DependencyInjection
         services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<MutableTenantContext>());
         services.AddScoped<ITenantContextAccessor>(sp => sp.GetRequiredService<MutableTenantContext>());
         services.AddScoped<INotifier, SmtpNotifier>();
-        services.AddSingleton<IPaymentGateway, FakePaymentGateway>();
+        services.AddPrataPaymentGateway(configuration);
         services.AddScoped<IDepositPaymentService, DepositPaymentService>();
         services.AddScoped<IOrderConfirmationService, OrderConfirmationService>();
         services.AddScoped<IWebhookPaymentProcessor, WebhookPaymentProcessor>();
@@ -159,6 +160,53 @@ public static class DependencyInjection
         services.AddScoped<PrataDbContextUnitOfWork>();
 
         return services;
+    }
+
+    /// <summary>
+    /// Fake em Development/testes e quando chaves sao CHANGE_ME.
+    /// Asaas quando Payments:Provider=Asaas e ApiKey configurada (ADR-0005).
+    /// </summary>
+    public static IServiceCollection AddPrataPaymentGateway(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<PaymentsOptions>(configuration.GetSection(PaymentsOptions.SectionName));
+        services.Configure<AsaasOptions>(configuration.GetSection(AsaasOptions.SectionName));
+
+        if (ShouldUseAsaas(configuration))
+        {
+            services.AddHttpClient<IPaymentGateway, AsaasPaymentGateway>(
+                (sp, client) =>
+                {
+                    var opts = sp.GetRequiredService<IOptions<AsaasOptions>>().Value;
+                    var baseUrl = string.IsNullOrWhiteSpace(opts.BaseUrl)
+                        ? "https://api-sandbox.asaas.com/v3/"
+                        : opts.BaseUrl.TrimEnd('/') + "/";
+                    client.BaseAddress = new Uri(baseUrl);
+                    client.DefaultRequestHeaders.Remove("access_token");
+                    client.DefaultRequestHeaders.TryAddWithoutValidation("access_token", opts.ApiKey);
+                    client.Timeout = TimeSpan.FromSeconds(30);
+                }
+            );
+        }
+        else
+        {
+            services.AddSingleton<IPaymentGateway, FakePaymentGateway>();
+        }
+
+        return services;
+    }
+
+    public static bool ShouldUseAsaas(IConfiguration configuration)
+    {
+        var provider = configuration["Payments:Provider"] ?? "Fake";
+        if (!string.Equals(provider, "Asaas", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var apiKey = configuration["Payments:Asaas:ApiKey"];
+        var webhookSecret = configuration["Payments:Asaas:WebhookSecret"];
+        return !string.IsNullOrWhiteSpace(apiKey)
+            && apiKey != "CHANGE_ME"
+            && !string.IsNullOrWhiteSpace(webhookSecret)
+            && webhookSecret != "CHANGE_ME";
     }
 
     private static IServiceCollection AddOpenTelemetryPrata(this IServiceCollection services, IConfiguration configuration)
