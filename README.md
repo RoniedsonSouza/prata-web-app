@@ -65,14 +65,33 @@ dotnet watch --project src/Prata.Worker
 cd web && npm install && npm run dev
 ```
 
-| Serviço | URL |
-|---|---|
-| API | http://localhost:5080 · OpenAPI em `/scalar` |
-| Front | http://prata.localhost:3000 |
-| Tenant demo | http://estudio-demo.prata.localhost:3000 |
+### Mapa local (dev)
 
+**Arquitetura:** o Host (`{slug}.prata.localhost` / `.prata.app`) resolve o
+tenant no front e na API (fallback: header `X-Tenant-Slug` ou path
+`/v1/t/{slug}`); front e API são origins distintos (`:3000` vs `:5080`);
+webhook do Asaas chega na API (`/v1/webhooks/asaas`), em local via túnel.
+
+| URL | O quê | Quem / papel |
+|---|---|---|
+| http://prata.localhost:3000 | Apex do front (`prata` é slug reservado) | Dev / entrada da plataforma |
+| http://{slug}.prata.localhost:3000 | Site público do fotógrafo (ex.: `estudio-demo`) | Visitante · SEO |
+| …/portal · …/portal/orders/… · …/portal/galleries/… | Portal do cliente (pedido, briefing, galeria) | Cliente do tenant |
+| …/studio · …/studio/orders · …/studio/briefing · …/studio/finance | Back-office do estúdio | Fotógrafo / staff |
+| http://localhost:5080 | API `/v1/…` · OpenAPI em `/scalar` | Front e integrações |
+| http://localhost:5080/health · `/health/ready` | Liveness / readiness | Ops · compose |
+| http://localhost:5080/v1/t/{slug}/… | Portfólio, tema, serviços (público) | Anônimo |
+| http://localhost:5080/v1/auth/… | Login, refresh, registro | Cliente e estúdio |
+| http://localhost:5080/v1/portal/… | Pedidos, briefing, galerias | Cliente autenticado |
+| http://localhost:5080/v1/studio/… | Pedidos, catálogo, finanças, agenda, galerias | Estúdio autenticado |
+| http://localhost:5080/v1/platform/… | Console da plataforma | `platform.admin` |
+| http://localhost:5080/v1/webhooks/asaas | Eventos do PSP (assinados) | Asaas |
+
+No Next, três grupos em `web/app`: `(public)`, `(portal)`, `(studio)` —
+detalhe de render/motion em [docs/16](docs/16-FRONTEND-E-EXPERIENCIA.md).
+Catálogo fino da API: [docs/10](docs/10-API.md). Portas extras (Mailpit, Seq,
+MinIO) e wildcard `*.localhost`: [docs/14](docs/14-AMBIENTES-E-OPERACAO.md).
 Publicação / DNS: [docs/deploy-e1.md](docs/deploy-e1.md).
-Portas extras (Mailpit, Seq, MinIO) e wildcard `*.localhost`: [docs/14](docs/14-AMBIENTES-E-OPERACAO.md).
 
 > A porta 5432 pode já estar ocupada por um Postgres local. Todas as portas do
 > compose são configuráveis: `POSTGRES_PORT=5433 docker compose up -d`.
