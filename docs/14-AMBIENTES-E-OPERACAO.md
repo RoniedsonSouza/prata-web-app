@@ -84,7 +84,7 @@ cloudflared tunnel --url http://localhost:5080
 | Banco | Neon (branch por PR) ou RDS | Neon simplifica o preview; RDS ganha em previsibilidade de custo em escala |
 | Storage | Cloudflare R2 + CDN | bucket privado, acesso só por URL assinada |
 | Redis | Upstash ou Redis gerenciado | `maxmemory-policy noeviction` obrigatório |
-| PSP | Asaas | `Payments__Provider=Asaas` + chaves; Fake se `CHANGE_ME`. Webhook `/v1/webhooks/asaas` |
+| PSP | Asaas | `Payments__Provider=Asaas` + chaves; Fake se `CHANGE_ME`. Webhook `/v1/webhooks/asaas`. Guia: [ops/ASAAS-SETUP.md](ops/ASAAS-SETUP.md) |
 
 ### Ordem de deploy
 

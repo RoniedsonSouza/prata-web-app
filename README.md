@@ -63,6 +63,7 @@ dotnet tool restore
 Passo a passo completo, portas, wildcard e checklist de publicação:
 [docs/14 · Ambientes e operação](docs/14-AMBIENTES-E-OPERACAO.md) ·
 [docs/deploy-e1.md](docs/deploy-e1.md).
+Configurar o PSP: [docs/ops/ASAAS-SETUP.md](docs/ops/ASAAS-SETUP.md).
 
 > A porta 5432 pode já estar ocupada por um Postgres local. Todas as portas do
 > compose são configuráveis: `POSTGRES_PORT=5433 docker compose up -d`.

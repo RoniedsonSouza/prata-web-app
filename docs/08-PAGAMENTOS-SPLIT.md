@@ -256,7 +256,7 @@ desses, a decisão de arquitetura mudou e precisa de ADR.
 
 | Item | Como |
 |---|---|
-| Ambiente | `api-sandbox.asaas.com` na E3 inteira. Produção só com conciliação verde |
+| Ambiente | `api-sandbox.asaas.com` na E3 inteira. Produção só com conciliação verde. Setup: [ops/ASAAS-SETUP.md](ops/ASAAS-SETUP.md) |
 | Adapter | `AsaasPaymentGateway` em `Infrastructure/Payments/` quando `Payments:Provider=Asaas` + chaves; senão `FakePaymentGateway` |
 | Webhook | `POST /v1/webhooks/asaas` · header `asaas-access-token` |
 | Webhook local | túnel (`cloudflared` / `ngrok`) apontando para a API local |

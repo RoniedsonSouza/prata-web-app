@@ -47,7 +47,7 @@ A API já resolve por slug (`{slug}.prata.app` / `/v1/t/{slug}`) e por
 
 Webhook no painel Asaas: `https://api.prata.app/v1/webhooks/asaas`
 (local: túnel → mesma path). Habilitação marketplace/split é **manual** no
-Asaas e fora do código.
+Asaas e fora do código. Passo a passo: [ops/ASAAS-SETUP.md](ops/ASAAS-SETUP.md).
 
 ## Checklist antes do piloto
 

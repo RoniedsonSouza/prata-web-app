@@ -80,6 +80,7 @@ disponibilidade nem buffer de deslocamento.
 ## 6. Referências
 
 [08 · Pagamentos e split](../08-PAGAMENTOS-SPLIT.md) ·
+[ops · Configurar Asaas](../ops/ASAAS-SETUP.md) ·
 [05 · Máquinas de estado](../05-MAQUINAS-DE-ESTADO.md), seção 3 ·
 [06 · Regras](../06-REGRAS-DE-NEGOCIO.md), prefixo `FIN` ·
 [ADR-0003](../adr/ADR-0003-modelo-de-receita-comissao.md) ·

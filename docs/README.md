@@ -19,7 +19,7 @@ Escopo v0.1 · setembro de 2026 · codinome **Prata**, trocável.
 | começar a codar hoje | [E1 · Fundação](etapas/E1-FUNDACAO.md) |
 | saber por que a stack é essa | [ADR](adr/README.md) |
 | não vazar foto entre tenants | [03 · Multi-tenancy](03-MULTI-TENANCY.md) |
-| mexer em dinheiro | [08 · Pagamentos e split](08-PAGAMENTOS-SPLIT.md) |
+| mexer em dinheiro | [08 · Pagamentos e split](08-PAGAMENTOS-SPLIT.md) · [ops · Asaas](ops/ASAAS-SETUP.md) |
 | deixar o portfólio nível Awwwards | [16 · Front-end e experiência](16-FRONTEND-E-EXPERIENCIA.md) |
 
 ## Documentos de referência
