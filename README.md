@@ -1,3 +1,10 @@
+> **⚠️ Project status: Discontinued**
+>
+> This was a SaaS idea for independent photographers. The author explored it and decided not to pursue it. The code is an unfinished prototype, not a finished or production product. It is no longer maintained. It stays public as a portfolio sample of architecture and engineering practice: Clean Architecture, multi-tenant PostgreSQL row-level security, domain tests, and ADRs.
+
+[![status: discontinued](https://img.shields.io/badge/status-discontinued-b31b1b)](#)
+[![archived](https://img.shields.io/badge/archived-9e9e9e)](#)
+
 # Prata
 
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
@@ -8,11 +15,11 @@
 
 English · [Português](#português)
 
-> **Multi-tenant SaaS for independent photographers: public portfolio, client portal, studio back-office, and payment split.**
+> **Unfinished prototype of a multi-tenant SaaS for independent photographers: public portfolio, client portal, studio back-office, and payment split.**
 
-A working photographer usually runs four disconnected tools: Instagram as a portfolio, WhatsApp as a CRM, a spreadsheet as the books, and Drive as delivery. Prata joins those four and adds the piece none of them have: a **pose-direction briefing**. The product bet is that the main reason a session disappoints is not technique — the person did not like themselves in the photo — and that this is predictable if someone asks before the shoot. The briefing produces a direction sheet the photographer takes to the session.
+A working photographer usually runs four disconnected tools: Instagram as a portfolio, WhatsApp as a CRM, a spreadsheet as the books, and Drive as delivery. Prata was an attempt to join those four and add the piece none of them have: a **pose-direction briefing**. The bet was that the main reason a session disappoints is not technique — the person did not like themselves in the photo — and that this is predictable if someone asks before the shoot. The briefing was meant to produce a direction sheet the photographer takes to the session.
 
-Scope **v0.1**. **Prata** is a provisional codename. The product is Brazilian: BRL, pt-BR, and a commission on each settled charge via the payment provider. The platform does not hold the money. Stages E1–E5 are implemented in this repository. Production acceptance is still open (wildcard DNS, Asaas marketplace account, pilot photographer). See [Status](#status).
+Scope of the prototype: **v0.1**. **Prata** was a provisional codename. The idea was a Brazilian product: BRL, pt-BR, and a commission on each settled charge via the payment provider, with the platform never holding the money. Stages E1–E5 exist here as prototype code. Nothing was deployed, and the idea was dropped. See [What was built](#what-was-built).
 
 ## Highlights for reviewers
 
@@ -28,7 +35,7 @@ Scope **v0.1**. **Prata** is a provisional codename. The product is Brazilian: B
 
 | Surface | What it does |
 |---|---|
-| Public portfolio | Per-tenant site on `{slug}.prata.localhost` (production target `{slug}.prata.app`). Real HTML for SEO; motion and WebGL load after. |
+| Public portfolio | Per-tenant site on `{slug}.prata.localhost`. The intended public host was `{slug}.prata.app`; that deploy never happened. Real HTML for SEO; motion and WebGL load after. |
 | Client portal | Orders, briefing, galleries. Route group `web/app/(portal)`. |
 | Studio | Orders, catalog, briefing templates, finance, audit. Route group `web/app/(studio)`. |
 | Platform | Tenant list, suspend, audit read. `platform.admin` cannot read briefings or photos. |
@@ -62,7 +69,7 @@ web/                        Next.js App Router — (public), (portal), (studio)
 | Front | TypeScript · Next.js 16.3 · React 19 · Tailwind CSS v4 · GSAP + Lenis on the public site · Sentry |
 | WebGL | A small WebGL2 canvas for immersive themes (`web/components/immersive-webgl.ts`). `three` is not a dependency; portal and studio stay free of it ([ADR-0010](docs/adr/ADR-0010-motion-e-webgl.md)). `prefers-reduced-motion` turns motion off. |
 | Jobs | `Prata.Worker` drains a transactional outbox and runs daily processors: quote expiry, payment reconciliation, gallery expiry, reminders, sensitive-briefing purge. Hangfire.Core 1.8 and Hangfire.PostgreSql 1.21 are referenced, and `.env.example` reserves a `hangfire` schema connection string, for the Postgres-backed scheduler described in the architecture notes. |
-| Storage | AWSSDK.S3. MinIO in `docker-compose`. Cloudflare R2 is the production target ([ADR-0008](docs/adr/ADR-0008-storage-r2-derivadas-no-worker.md)). |
+| Storage | AWSSDK.S3. MinIO in `docker-compose`. The intended production store was Cloudflare R2 ([ADR-0008](docs/adr/ADR-0008-storage-r2-derivadas-no-worker.md)). |
 | Payments | Asaas behind `IPaymentGateway` ([ADR-0005](docs/adr/ADR-0005-psp-asaas-com-port.md)). The fake gateway is used unless `Payments:Provider=Asaas` and both the API key and the webhook secret are set to something other than `CHANGE_ME`. Webhook: `POST /v1/webhooks/asaas`. |
 | Auth | ASP.NET Core Identity + JWT (`tenant_id`, `role`). Access token 15 minutes, rotating refresh-token family. |
 | Observability | Serilog · OpenTelemetry (ASP.NET Core, HttpClient, Npgsql) · Seq in compose · Sentry on the front. Log filters drop tokens, passwords, and connection strings. |
@@ -72,7 +79,9 @@ Business-rule IDs (`RN-…`) are the join key between the catalog, the code, and
 
 ## How to run
 
-Requirements: .NET 10 SDK, Node.js 24 (the version CI uses), Docker.
+These steps are how the prototype was started on a machine. They are a way to read the sample, not support for a product.
+
+Requirements: .NET 10 SDK, Node.js 24 (the version the workflow file uses), Docker.
 
 `docker compose` only starts dependencies. The API reads `src/Prata.Api/appsettings.json` in Development (local connection strings are already there). ASP.NET does not load the root `.env` by itself. Copy `.env.example` to `.env` when you want the full variable set; replace every `CHANGE_ME`. The JWT signing key must be at least 32 characters.
 
@@ -109,7 +118,7 @@ Port 5432 may already be taken. Every compose port is overridable: `POSTGRES_POR
 127.0.0.1  prata.localhost estudio-demo.prata.localhost
 ```
 
-Asaas is optional on day one. Without real keys the API uses `FakePaymentGateway`. Real provider: [docs/ops/ASAAS-SETUP.md](docs/ops/ASAAS-SETUP.md).
+Without real keys the API uses `FakePaymentGateway`. The notes for a real Asaas account are in [docs/ops/ASAAS-SETUP.md](docs/ops/ASAAS-SETUP.md). No production account was connected.
 
 ### Local map
 
@@ -138,7 +147,7 @@ dotnet test           # integration tests need Docker (Testcontainers)
 cd web && npm run typecheck && npm run size
 ```
 
-CI (`.github/workflows/ci.yml`) runs the doc check, CSharpier, build, unit tests, Testcontainers integration tests, a gate that `TenantIsolationTests` still exists, the Next.js typecheck/lint/build, the bundle budget, and Lighthouse on the public portfolio.
+The workflow in `.github/workflows/ci.yml` was written to run the doc check, CSharpier, build, unit tests, Testcontainers integration tests, a gate that `TenantIsolationTests` still exists, the Next.js typecheck/lint/build, the bundle budget, and Lighthouse on the public portfolio. It is a snapshot of how the prototype was checked. It is not an offer of ongoing maintenance.
 
 ## Layout
 
@@ -166,23 +175,27 @@ Index: **[docs/README.md](docs/README.md)**. The four that matter first:
 | [02 · Architecture](docs/02-ARQUITETURA.md) | dependency rule, ports, why this stack |
 | [03 · Multi-tenancy](docs/03-MULTI-TENANCY.md) | isolation, RLS, the leak checklist |
 | [06 · Business rules](docs/06-REGRAS-DE-NEGOCIO.md) | numbered, testable rules |
-| [13 · Roadmap and risks](docs/13-ROADMAP-E-RISCOS.md) | E1–E5, acceptance, open decisions |
+| [13 · Roadmap and risks](docs/13-ROADMAP-E-RISCOS.md) | the stage plan and risks, as written at the time |
 | [adr](docs/adr/README.md) | ten accepted decisions |
 
-[CLAUDE.md](CLAUDE.md) is the construction checklist that applies to every change.
+[CLAUDE.md](CLAUDE.md) is the construction checklist followed while this prototype was written.
 
-## Status
+## What was built
+
+Historical record. The author stopped. There is no next stage, no pilot, and no production deploy.
 
 | | |
 |---|---|
-| In this repository | Business rules, architecture, ADRs, data model, roadmap |
-| In this repository | `src/`, `tests/`, `web/` — API, domain, worker, and front for stages E1–E5 |
-| In this repository | `FakePaymentGateway` in dev and tests; `AsaasPaymentGateway` when keys are configured |
-| Still open | Real deploy (`*.prata.app`), Asaas marketplace enablement, pilot photographer |
+| In this repository | Business rules, architecture, ADRs, data model, and the roadmap as it was written |
+| In this repository | `src/`, `tests/`, `web/` — prototype API, domain, worker, and front for the old stages E1–E5 |
+| In this repository | `FakePaymentGateway` in dev and tests; `AsaasPaymentGateway` only if keys were configured |
+| Never done | Real deploy (`*.prata.app`), Asaas marketplace enablement, pilot photographer |
 
-Do not treat a stage as accepted in production only because the code exists. Acceptance criteria stay in [13 · Roadmap](docs/13-ROADMAP-E-RISCOS.md).
+The acceptance notes in [13 · Roadmap](docs/13-ROADMAP-E-RISCOS.md) describe what would have counted as production. They were not met, and the work stopped.
 
-| Stage | Delivery |
+The stage plan, kept as history:
+
+| Stage | What that stage was for |
 |---|---|
 | [E1](docs/etapas/E1-FUNDACAO.md) | Tenant, auth, RLS, catalog, public portfolio |
 | [E2](docs/etapas/E2-COMERCIAL.md) | Client, order, briefing, direction sheet |
@@ -190,20 +203,20 @@ Do not treat a stage as accepted in production only because the code exists. Acc
 | [E4](docs/etapas/E4-ENTREGA.md) | Upload, derivatives, gallery, selection, ZIP |
 | [E5](docs/etapas/E5-AGENDA-E-CONTRATO.md) | Agenda, signed contract, reminders |
 
-The two decisions most likely to change after talking to working photographers are the order states ([05](docs/05-MAQUINAS-DE-ESTADO.md)) and the revenue model ([ADR-0003](docs/adr/ADR-0003-modelo-de-receita-comissao.md)).
+Two product questions were expected to move after conversations with working photographers: the order states ([05](docs/05-MAQUINAS-DE-ESTADO.md)) and the revenue model ([ADR-0003](docs/adr/ADR-0003-modelo-de-receita-comissao.md)). Those conversations did not continue.
 
 ---
 
 ## Português
 
-Texto original do README, preservado abaixo. O estado do código neste repositório está na seção em inglês.
+> **⚠️ Projeto descontinuado.** Ideia de SaaS para fotógrafos que o autor explorou e decidiu não levar adiante. O código é um protótipo inacabado, não um produto pronto nem de produção. Não há manutenção. O repositório fica público como amostra de portfólio: Clean Architecture, RLS multi-tenant e o restante das práticas de engenharia.
 
 # Prata
 
 > **SaaS vertical multi-tenant de gestão e entrega fotográfica, com portfólio
 > público, portal do cliente e split de pagamento.**
 
-Escopo **v0.1** · setembro de 2026 · **codinome provisório, trocável**.
+Escopo **v0.1** · setembro de 2026 · **codinome provisório da época**.
 
 Um fotógrafo autônomo opera hoje com quatro ferramentas desconectadas:
 Instagram como portfólio, WhatsApp como CRM, planilha como financeiro e Drive
@@ -215,20 +228,19 @@ um ensaio não é técnica, é a pessoa não ter gostado de si mesma na foto.
 
 ## Estado atual
 
-**Código E1–E5 na branch `feat/e5-agenda`.** Aceite de piloto/produção
-**ainda aberto** (DNS wildcard, conta Asaas marketplace, fotógrafo piloto).
+**Projeto descontinuado.** Não há piloto aberto, próximo passo nem deploy. O que segue é o registro do protótipo.
 
 | | |
 |---|---|
-| ✅ | regras de negócio, arquitetura, ADRs, modelo de dados, roadmap |
-| ✅ | `src/`, `tests/`, `web/` — API, domínio, workers e front na branch |
-| ✅ | FakePaymentGateway em dev/testes; `AsaasPaymentGateway` quando configurado |
-| ⬜ | Deploy real (`*.prata.app`), habilitação marketplace Asaas, aceite piloto |
+| No repositório | regras de negócio, arquitetura, ADRs, modelo de dados, roadmap da época |
+| No repositório | `src/`, `tests/`, `web/` — API, domínio, worker e front do protótipo |
+| No repositório | FakePaymentGateway em dev/testes; `AsaasPaymentGateway` se houvesse chaves |
+| Não feito | Deploy real (`*.prata.app`), habilitação marketplace Asaas, fotógrafo piloto |
 
-Antes de contribuir, leia [docs/README.md](docs/README.md) e a etapa em
-[docs/etapas/](docs/etapas/). Critérios de aceite de produção continuam em
-[13 · Roadmap](docs/13-ROADMAP-E-RISCOS.md) — **não** marcar como feitos só
-porque o código existe.
+Os documentos de construção permanecem como histórico:
+[docs/README.md](docs/README.md) e [docs/etapas/](docs/etapas/). Os critérios
+que teriam valido para produção estão em
+[13 · Roadmap](docs/13-ROADMAP-E-RISCOS.md). Não foram atingidos.
 
 ## Stack
 
@@ -246,12 +258,15 @@ Decisões e alternativas recusadas: [docs/adr](docs/adr/README.md).
 
 ## Dev local (rápido)
 
-**Antes do 1º start:** copie `.env.example` → `.env`, suba as deps, papéis do
+Como o protótipo subia na máquina. Não é guia de produto suportado.
+
+**Na época do 1º start:** copie `.env.example` → `.env`, suba as deps, papéis do
 banco (`db-roles.sql`) e migrations — tudo em
 [docs/14 · Ambientes e operação](docs/14-AMBIENTES-E-OPERACAO.md).
 
-Asaas **não** é obrigatório no dia 1: sem chaves reais a API usa
-`FakePaymentGateway`. PSP real: [docs/ops/ASAAS-SETUP.md](docs/ops/ASAAS-SETUP.md).
+Sem chaves reais a API usa `FakePaymentGateway`. O passo a passo de uma conta
+Asaas ficou em [docs/ops/ASAAS-SETUP.md](docs/ops/ASAAS-SETUP.md). Nenhuma conta
+de produção foi ligada.
 
 ```bash
 # deps (Postgres, Redis, MinIO, Mailpit, Seq)
@@ -330,28 +345,30 @@ importam:
 | [00 · Visão e escopo](docs/00-VISAO-E-ESCOPO.md) | o produto, os atores e **o que ele não é** |
 | [03 · Multi-tenancy](docs/03-MULTI-TENANCY.md) | o único risco crítico do produto |
 | [06 · Regras de negócio](docs/06-REGRAS-DE-NEGOCIO.md) | regras numeradas e testáveis |
-| [13 · Roadmap e riscos](docs/13-ROADMAP-E-RISCOS.md) | E1–E5, critérios de aceite, decisões abertas |
+| [13 · Roadmap e riscos](docs/13-ROADMAP-E-RISCOS.md) | plano E1–E5 e riscos, como estavam escritos |
 
-E [CLAUDE.md](CLAUDE.md) — as regras de construção que valem em todo commit.
+E [CLAUDE.md](CLAUDE.md) — as regras de construção usadas enquanto o protótipo era escrito.
 
-## Roadmap
+## Roadmap (histórico)
 
-| Etapa | Entrega | Marco |
+Plano da época em que a ideia ainda estava em exploração. Não é próximo passo: o projeto foi descontinuado antes de virar produto.
+
+| Etapa | Entrega prevista | Marco previsto |
 |---|---|---|
 | [E1](docs/etapas/E1-FUNDACAO.md) | tenant, auth, RLS, catálogo, portfólio público | um fotógrafo real usa como site dele |
 | [E2](docs/etapas/E2-COMERCIAL.md) | cliente, pedido, briefing, ficha de direção | substitui o WhatsApp na entrada de lead |
-| [E3](docs/etapas/E3-DINHEIRO.md) | PSP, KYC, split, sinal e saldo, conciliação | **a plataforma passa a faturar** |
-| [E4](docs/etapas/E4-ENTREGA.md) | upload, derivadas, galeria, seleção, ZIP | fecha o ciclo e liga a indicação |
+| [E3](docs/etapas/E3-DINHEIRO.md) | PSP, KYC, split, sinal e saldo, conciliação | a plataforma passaria a faturar |
+| [E4](docs/etapas/E4-ENTREGA.md) | upload, derivadas, galeria, seleção, ZIP | fecharia o ciclo e ligaria a indicação |
 | [E5](docs/etapas/E5-AGENDA-E-CONTRATO.md) | agenda, contrato assinado, lembretes | produto completo |
 
-**5 a 7 meses** para as cinco, um dev meio período. E3 vem antes de E4 de
-propósito: galeria bonita sem cobrança é um custo; cobrança sem galeria já é
-um negócio.
+O prazo imaginado era de **5 a 7 meses**, um dev meio período. E3 vinha antes de E4 de propósito: galeria bonita sem cobrança é um custo; cobrança sem galeria já é um negócio. Esse plano não foi até um produto em produção.
 
-## Este escopo é para ser cortado
+## Este escopo era para ser cortado
 
-Feito para ser discutido, não seguido à risca. Os dois pontos que mais mudam
-depois de conversar com dois ou três fotógrafos reais são **os estados do
+Texto da época em que o escopo ainda ia ser discutido com fotógrafos. Essa conversa não seguiu.
+
+Feito para ser discutido, não seguido à risca. Os dois pontos que mais mudariam
+depois de conversar com dois ou três fotógrafos reais eram **os estados do
 pedido** ([05](docs/05-MAQUINAS-DE-ESTADO.md)) e **o modelo de receita**
-([ADR-0003](docs/adr/ADR-0003-modelo-de-receita-comissao.md)). As perguntas a
-fazer a eles estão em [13, seção 6](docs/13-ROADMAP-E-RISCOS.md).
+([ADR-0003](docs/adr/ADR-0003-modelo-de-receita-comissao.md)). As perguntas que
+seriam feitas a eles estão em [13, seção 6](docs/13-ROADMAP-E-RISCOS.md).
